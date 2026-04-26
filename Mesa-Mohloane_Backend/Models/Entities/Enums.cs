@@ -77,7 +77,18 @@ public enum AuditActionType
     Approved = 4,
     Rejected = 5,
     Login = 6,
-    Logout = 7
+    Logout = 7,
+    Create = 8,
+    Update = 9,
+    Delete = 10,
+    Approve = 11,
+    Reject = 12,
+    Assign = 13,
+    Submit = 14,
+    Complete = 15,
+    Verify = 16,
+    Rate = 17,
+    Other = 18
 }
 
 public enum TenderLineItemCategory
