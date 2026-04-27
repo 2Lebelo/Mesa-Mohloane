@@ -3,10 +3,8 @@ using Mesa_Mohloane_Backend.Models.Entities;
 
 namespace Mesa_Mohloane_Backend.Data;
 
-public class MesaMohloaneDbContext : DbContext
+public class MesaMohloaneDbContext(DbContextOptions<MesaMohloaneDbContext> options) : DbContext(options)
 {
-    public MesaMohloaneDbContext(DbContextOptions<MesaMohloaneDbContext> options) : base(options) { }
-
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<ContractorProfile> ContractorProfiles { get; set; }

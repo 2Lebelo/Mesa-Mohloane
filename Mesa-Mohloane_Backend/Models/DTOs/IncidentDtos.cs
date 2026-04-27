@@ -24,9 +24,7 @@ public record IncidentCreateDto(
     string Description,
     string LocationName,
     decimal Latitude,
-    decimal Longitude,
-    Guid CitizenId,
-    IReadOnlyCollection<IncidentPhotoCreateDto> Photos);
+    decimal Longitude);
 
 public record IncidentUpdateDto(
     string Title,

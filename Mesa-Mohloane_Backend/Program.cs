@@ -54,6 +54,7 @@ builder.Services.AddCors(opt =>
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
+builder.Services.AddScoped<IIncidentRepository, IncidentRepository>();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -61,6 +62,12 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IIncidentService, IncidentService>();
+
+// Cloudinary
+builder.Services.Configure<CloudinarySettings>(
+builder.Configuration.GetSection("Cloudinary"));
+builder.Services.AddSingleton<CloudinaryService>();
 
 // Controllers 
 builder.Services.AddControllers();

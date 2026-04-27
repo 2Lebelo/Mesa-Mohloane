@@ -74,8 +74,9 @@ public class AuthService : IAuthService
         await _audit.LogAsync(
             action     : "UserRegistered",
             entityName : "User",
-            entityId   : userId.ToString(),
+            entityId   : userId,
             performedBy: createdUser.Email,
+            userId     : createdUser.Id,
             details    : $"Role: {createdUser.Role!.Name}");
 
         return ServiceResult<AuthResponseDto>.Ok(new AuthResponseDto
@@ -107,8 +108,9 @@ public class AuthService : IAuthService
         await _audit.LogAsync(
             action     : "UserLogin",
             entityName : "User",
-            entityId   : user.Id.ToString(),
+            entityId   : user.Id,
             performedBy: user.Email,
+            userId     : user.Id,
             details    : "Login successful");
 
         return ServiceResult<AuthResponseDto>.Ok(new AuthResponseDto
@@ -138,8 +140,9 @@ public class AuthService : IAuthService
         await _audit.LogAsync(
             action     : "PasswordChanged",
             entityName : "User",
-            entityId   : userId.ToString(),
+            entityId   : userId,
             performedBy: user.Email,
+            userId     : userId,
             details    : "Password changed successfully");
 
         return ServiceResult.Ok();
@@ -182,8 +185,9 @@ public class AuthService : IAuthService
         await _audit.LogAsync(
             action     : "ProfileUpdated",
             entityName : "User",
-            entityId   : userId.ToString(),
+            entityId   : userId,
             performedBy: user.Email,
+            userId     : userId,
             details    : "Profile details updated");
 
         return ServiceResult.Ok();

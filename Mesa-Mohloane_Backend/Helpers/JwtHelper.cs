@@ -7,11 +7,9 @@ using AppClaimTypes = Mesa_Mohloane_Backend.Helpers.ClaimTypes;
 
 namespace Mesa_Mohloane_Backend.Helpers;
 
-public class JwtHelper
+public class JwtHelper(IConfiguration config)
 {
-    private readonly IConfiguration _config;
-
-    public JwtHelper(IConfiguration config) => _config = config;
+    private readonly IConfiguration _config = config;
 
     public DateTime GetExpiry()
     {
