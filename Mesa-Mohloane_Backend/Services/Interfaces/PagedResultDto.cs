@@ -1,12 +1,12 @@
-﻿using Mesa_Mohloane_Backend.Models.DTOs;
+﻿namespace Mesa_Mohloane_Backend.Services;
 
-namespace Mesa_Mohloane_Backend.Services.Interfaces
+public class PagedResultDto<T>
 {
-    public class PagedResultDto<T>
-    {
-        public List<UserDto> Items { get; internal set; }
-        public int TotalCount { get; internal set; }
-        public int Page { get; internal set; }
-        public int PageSize { get; internal set; }
-    }
+    public IReadOnlyList<T> Items { get; set; } = new List<T>();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+    public bool HasNext => Page < TotalPages;
+    public bool HasPrev => Page > 1;
 }

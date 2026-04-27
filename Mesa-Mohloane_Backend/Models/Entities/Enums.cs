@@ -10,6 +10,7 @@ public enum UserRole
 
 public enum IncidentStatus
 {
+    Pending = 0,
     Reported = 1,
     Verified = 2,
     Published = 3,
