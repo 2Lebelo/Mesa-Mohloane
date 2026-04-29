@@ -8,3 +8,7 @@ public record WorkCompletionDto(
     DateTime SubmittedAt,
     DateTime? ReviewedAt,
     Guid? ReviewedByAdminId);
+
+public record WorkCompletionCreateDto(
+    string CompletionSummary,
+    string? CompletionEvidenceUrl);

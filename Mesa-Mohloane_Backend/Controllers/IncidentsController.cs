@@ -119,4 +119,22 @@ public class IncidentsController(IIncidentService incidents) : ControllerBase
         var result = await _incidents.GetAllAsync(page, pageSize, status, search);
         return Ok(result);
     }
+
+    // Admin: verify a submitted incident 
+    [HttpPatch("{id:guid}/verify")]
+    [Authorize(Roles = "Administrator")]
+    public async Task<IActionResult> Verify(Guid id)
+    {
+        var result = await _incidents.VerifyAsync(id, CurrentUserId);
+        return result.Success ? Ok(result.Data) : BadRequest(new { error = result.Error });
+    }
+
+    // Admin: publish verified incident so contractors can bid 
+    [HttpPatch("{id:guid}/publish")]
+    [Authorize(Roles = "Administrator")]
+    public async Task<IActionResult> Publish(Guid id)
+    {
+        var result = await _incidents.PublishForBiddingAsync(id, CurrentUserId);
+        return result.Success ? Ok(result.Data) : BadRequest(new { error = result.Error });
+    }
 }

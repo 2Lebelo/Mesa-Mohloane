@@ -55,6 +55,13 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IAuditRepository, AuditRepository>();
 builder.Services.AddScoped<IIncidentRepository, IncidentRepository>();
+builder.Services.AddScoped<IContractorProfileRepository, ContractorProfileRepository>();  
+builder.Services.AddScoped<ITenderApplicationRepository, TenderApplicationRepository>(); 
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();          
+builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();             
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<IContractorRatingRepository, ContractorRatingRepository>();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -63,6 +70,14 @@ builder.Services.AddScoped<JwtHelper>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IIncidentService, IncidentService>();
+builder.Services.AddScoped<ITenderService, TenderService>();    
+builder.Services.AddScoped<IAssignmentService, AssignmentService>(); 
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();   
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IContractorProfileService, ContractorProfileService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+//builder.Services.AddScoped<IContractorProfileService, ContractorProfileService>();
+builder.Services.AddScoped<IContractorRatingService, ContractorRatingService>();
 
 // Cloudinary
 builder.Services.Configure<CloudinarySettings>(
