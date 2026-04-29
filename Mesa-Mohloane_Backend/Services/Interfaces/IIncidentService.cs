@@ -13,6 +13,11 @@ public interface IIncidentService
     Task<ServiceResult<IncidentDto>> AddPhotosAsync(Guid incidentId, Guid citizenId, IList<IFormFile> photos);
     Task<ServiceResult> DeletePhotoAsync(Guid incidentId, Guid photoId, Guid citizenId);
 
+    // Admin operations
+    Task<ServiceResult<IncidentDto>> VerifyAsync(Guid incidentId, Guid adminId);
+    Task<ServiceResult<IncidentDto>> PublishForBiddingAsync(Guid incidentId, Guid adminId);
+
+
     // Queries
     Task<ServiceResult<IncidentDto>> GetByIdAsync(Guid id);
     Task<PagedResultDto<IncidentListDto>> GetByCitizenAsync(Guid citizenId, int page, int pageSize);

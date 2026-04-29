@@ -295,4 +295,49 @@ public class IncidentService : IIncidentService
         LocationName: i.LocationName,
         Status: i.Status,
         ReportedAt: i.ReportedAt);
+
+    // Verify (Admin only) 
+    public async Task<ServiceResult<IncidentDto>> VerifyAsync(Guid incidentId, Guid adminId)
+    {
+        var incident = await _incidentRepo.GetByIdAsync(incidentId);
+        if (incident is null)
+            return ServiceResult<IncidentDto>.Fail("Incident not found.");
+
+        if (incident.Status != IncidentStatus.Pending && incident.Status != IncidentStatus.Reported)
+            return ServiceResult<IncidentDto>.Fail("Only Pending or Reported incidents can be verified.");
+
+        incident.Status = IncidentStatus.Verified;
+        incident.VerifiedAt = DateTime.UtcNow;
+        incident.VerifiedByAdminId = adminId;
+        incident.UpdatedAt = DateTime.UtcNow;
+
+        await _incidentRepo.UpdateAsync(incident);
+        await _audit.LogAsync("IncidentVerified", "Incident",
+            incidentId.ToString(), adminId.ToString(),
+            $"Incident {incident.IncidentNumber} verified by admin");
+
+        return await GetByIdAsync(incidentId);
+    }
+
+    // Publish for bidding (Admin only) 
+    public async Task<ServiceResult<IncidentDto>> PublishForBiddingAsync(Guid incidentId, Guid adminId)
+    {
+        var incident = await _incidentRepo.GetByIdAsync(incidentId);
+        if (incident is null)
+            return ServiceResult<IncidentDto>.Fail("Incident not found.");
+
+        if (incident.Status != IncidentStatus.Verified)
+            return ServiceResult<IncidentDto>.Fail("Only Verified incidents can be published for bidding.");
+
+        incident.Status = IncidentStatus.Published;
+        incident.PublishedAt = DateTime.UtcNow;
+        incident.UpdatedAt = DateTime.UtcNow;
+
+        await _incidentRepo.UpdateAsync(incident);
+        await _audit.LogAsync("IncidentPublished", "Incident",
+            incidentId.ToString(), adminId.ToString(),
+            $"Incident {incident.IncidentNumber} published for contractor bidding");
+
+        return await GetByIdAsync(incidentId);
+    }
 }
