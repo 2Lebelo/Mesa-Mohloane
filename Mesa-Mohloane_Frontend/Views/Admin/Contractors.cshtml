@@ -1,0 +1,351 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.ContractorProfileDto>
+
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    ViewData["Title"] = "Contractor Profiles";
+    ViewData["ActiveNav"] = "Contractors";
+
+    bool? selectedApproval = null;
+
+    if (ViewData["IsApproved"] is bool b)
+    {
+        selectedApproval = b;
+    }
+
+    var currentPage = Model?.Page ?? 1;
+    var pageSize = Model?.PageSize ?? 10;
+    var totalCount = Model?.TotalCount ?? 0;
+    var totalPages = Model?.TotalPages ?? 1;
+
+    var items = Model?.Items ?? Array.Empty<Mesa_Mohloane_Frontend.Dtos.ContractorProfileDto>();
+
+    var approvedOnPage = items.Count(x => x.IsApproved);
+    var pendingOnPage = items.Count(x => !x.IsApproved);
+    var averageRating = items.Any() ? items.Average(x => x.AverageRating) : 0;
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Contractor Profiles</h1>
+            <div class="page-breadcrumb">
+                <a href="/Admin/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Contractors</span>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:.65rem;flex-wrap:wrap">
+            <a href="/Admin/Contractors" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-rotate-right"></i>
+                Refresh
+            </a>
+
+            <a href="/Admin/Contractors?isApproved=false" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-clock"></i>
+                Pending Approval
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-check-circle"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+<div class="grid grid-4 mb-3">
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="fa-solid fa-helmet-safety"></i>
+        </div>
+        <div>
+            <div class="stat-value">@totalCount</div>
+            <div class="stat-label">
+                @(selectedApproval == true
+                                ? "Approved Profiles"
+                                : selectedApproval == false
+                                ? "Pending Profiles"
+                                : "Total Profiles")
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <div class="stat-value">@approvedOnPage</div>
+                <div class="stat-label">Approved On Page</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-value">@pendingOnPage</div>
+                <div class="stat-label">Pending On Page</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fa-solid fa-star"></i>
+            </div>
+            <div>
+                <div class="stat-value">@averageRating.ToString("0.0")</div>
+                <div class="stat-label">Average Rating</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Profile Filters</div>
+                <div class="card-subtitle">Switch between all, pending, and approved contractor profiles</div>
+            </div>
+        </div>
+
+        <div class="card-body" style="display:flex;gap:.65rem;flex-wrap:wrap">
+            <a href="/Admin/Contractors"
+               class="btn btn-sm @(selectedApproval is null ? "btn-primary" : "btn-secondary")">
+                <i class="fa-solid fa-list"></i>
+                All Profiles
+            </a>
+
+            <a href="/Admin/Contractors?isApproved=false"
+               class="btn btn-sm @(selectedApproval == false ? "btn-primary" : "btn-secondary")">
+                <i class="fa-solid fa-clock"></i>
+                Pending Approval
+            </a>
+
+            <a href="/Admin/Contractors?isApproved=true"
+               class="btn btn-sm @(selectedApproval == true ? "btn-primary" : "btn-secondary")">
+                <i class="fa-solid fa-circle-check"></i>
+                Approved
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Contractor Register</div>
+                <div class="card-subtitle">
+                    @(selectedApproval == true
+                                    ? "Approved contractors eligible for tender participation"
+                                    : selectedApproval == false
+                                    ? "Pending contractor profiles awaiting administrator approval"
+                                    : "All contractor company profiles")
+                </div>
+            </div>
+
+            <div class="text-sm text-muted">
+                Page @currentPage of @totalPages
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Registration</th>
+                        <th>Coverage Area</th>
+                        <th>Rating</th>
+                        <th>Jobs</th>
+                        <th>Status</th>
+                        <th>Approved At</th>
+                        <th class="actions">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (items.Any())
+                    {
+                        foreach (var contractor in items)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@contractor.CompanyName</strong>
+                                    <div class="text-sm text-muted">
+                                        Tax: @(string.IsNullOrWhiteSpace(contractor.TaxNumber) ? "—" : contractor.TaxNumber)
+                                    </div>
+                                </td>
+
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @contractor.RegistrationNumber
+                                </td>
+
+                                <td>@contractor.CoverageArea</td>
+
+                                <td>
+                                    <span style="color:var(--warning);font-weight:700">★</span>
+                                    @contractor.AverageRating.ToString("0.0")
+                                </td>
+
+                                <td>
+                                    @contractor.CompletedJobsCount completed
+                                    <br />
+                                    <span class="text-sm text-muted">
+                                        @contractor.LateCompletionCount late
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @if (contractor.IsApproved)
+                                    {
+                                        <span class="badge badge-success badge-dot">Approved</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-warning badge-dot">Pending Approval</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (contractor.ApprovedAt.HasValue)
+                                    {
+                                        <span class="text-sm">
+                                            @contractor.ApprovedAt.Value.ToString("dd MMM yyyy")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-sm text-muted">—</span>
+                                    }
+                                </td>
+
+                                <td class="actions">
+                                    <div style="display:flex;gap:.45rem;justify-content:flex-end;flex-wrap:wrap">
+                                        <a asp-controller="Admin"
+                                           asp-action="ContractorDetails"
+                                           asp-route-id="@contractor.Id"
+                                           class="btn btn-secondary btn-sm">
+                                            <i class="fa-solid fa-eye"></i>
+                                            View
+                                        </a>
+
+                                        @if (!contractor.IsApproved)
+                                        {
+                                            <form method="post"
+                                                  asp-action="ApproveContractorProfile"
+                                                  style="display:inline"
+                                                  onsubmit="return confirm('Approve this contractor profile?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@contractor.Id" />
+
+                                                <button type="submit" class="btn btn-primary btn-sm">
+                                                    <i class="fa-solid fa-check"></i>
+                                                    Approve
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-helmet-safety"></i>
+
+                                    @if (selectedApproval == false)
+                                    {
+                                        <h4>No pending contractor profiles</h4>
+                                        <p>Pending contractor profiles will appear here when contractors submit company details.</p>
+                                    }
+                                    else if (selectedApproval == true)
+                                    {
+                                        <h4>No approved contractor profiles</h4>
+                                        <p>Approved contractor profiles will appear here after administrator approval.</p>
+                                    }
+                                    else
+                                    {
+                                        <h4>No contractor profiles found</h4>
+                                        <p>Contractor profiles will appear here after contractors create company profiles.</p>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="pagination">
+                <div class="pagination-info">
+                    Showing page @currentPage of @totalPages — @totalCount total records
+                </div>
+
+                <div class="pagination-nav">
+                    @{
+                        var filterQuery = selectedApproval.HasValue
+                        ? $"&isApproved={selectedApproval.Value.ToString().ToLowerInvariant()}"
+                        : "";
+
+                        var previousPage = currentPage - 1;
+                        var nextPage = currentPage + 1;
+                    }
+
+                    @if (currentPage > 1)
+                    {
+                        <a class="page-btn" href="/Admin/Contractors?page=@previousPage@filterQuery">
+                            <i class="fa-solid fa-chevron-left" style="font-size:.65rem"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-left" style="font-size:.65rem"></i>
+                        </button>
+                    }
+
+                    @for (var p = 1; p <= totalPages; p++)
+                    {
+                        if (p == currentPage)
+                        {
+                            <span class="page-btn active">@p</span>
+                        }
+                        else
+                        {
+                            <a class="page-btn" href="/Admin/Contractors?page=@p@filterQuery">@p</a>
+                        }
+                    }
+
+                    @if (currentPage < totalPages)
+                    {
+                        <a class="page-btn" href="/Admin/Contractors?page=@nextPage@filterQuery">
+                            <i class="fa-solid fa-chevron-right" style="font-size:.65rem"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-right" style="font-size:.65rem"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

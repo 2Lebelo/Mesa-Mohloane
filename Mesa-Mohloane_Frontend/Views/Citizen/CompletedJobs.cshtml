@@ -1,0 +1,75 @@
+@model Mesa_Mohloane_Frontend.ViewModels.CompletedJobsViewModel
+@{
+    Layout = "~/Views/Shared/_CitizenShell.cshtml";
+    ViewData["Title"] = "Completed Jobs";
+    ViewData["ActiveNav"] = "CompletedJobs";
+}
+<div class='page-header'>
+    <h1 class='page-title'>Completed Jobs</h1>
+    <div class='page-breadcrumb'><a href='#'>Home</a><span>List</span></div>
+</div>
+<div class='card'>
+    <div class='card-header'>
+        <div>
+            <div class='card-title'>Completed Jobs</div>
+            <div class='card-subtitle'>Mesa-Mohloane records</div>
+        </div>
+    </div>
+    <div class='table-wrap'>
+        <table class='table'>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model.Items.Any())
+            {
+                foreach (var job in Model.Items)
+                {
+                    <tr>
+                        <td>@job.Incident.IncidentNumber</td>
+                        <td>@job.Incident.Title</td>
+                        <td><span class='badge badge-success'>Completed</span></td>
+                        <td>
+                            @if (job.Rating is null && job.Assignment is not null)
+                            {
+                                <form asp-action="RateContractor" method="post" style="display:flex;gap:.4rem;flex-wrap:wrap">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="IncidentId" value="@job.Incident.Id" />
+                                    <input type="hidden" name="AssignmentId" value="@job.Assignment.Id" />
+                                    <input type="hidden" name="ContractorId" value="@job.Assignment.ContractorId" />
+                                    <select name="Stars" class="form-select-light" style="max-width:120px">
+                                        <option value="5">5 Stars</option>
+                                        <option value="4">4 Stars</option>
+                                        <option value="3">3 Stars</option>
+                                        <option value="2">2 Stars</option>
+                                        <option value="1">1 Star</option>
+                                    </select>
+                                    <input name="Comment" class="form-control-light" placeholder="Comment" style="max-width:200px" />
+                                    <button class="btn btn-primary btn-sm" type="submit">Rate</button>
+                                </form>
+                            }
+                            else if (job.Rating is not null)
+                            {
+                                <span>@job.Rating.Stars / 5</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No assignment data</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan='4'><div class=empty-state>No completed jobs found</div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

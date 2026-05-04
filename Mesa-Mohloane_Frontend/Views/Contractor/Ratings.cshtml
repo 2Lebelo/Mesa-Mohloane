@@ -1,0 +1,7 @@
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "Ratings";
+    ViewData["ActiveNav"] = "Ratings";
+}
+<div class='page-header'><h1 class='page-title'>Ratings</h1><div class='page-breadcrumb'><a href='#'>Home</a><span>List</span></div></div><div class='card'><div class='card-header'><div><div class='card-title'>Ratings</div><div class='card-subtitle'>Mesa-Mohloane records</div></div></div><div class='table-wrap'><table class='table'><thead><tr><th>#</th><th>Title</th><th>Info</th><th>Status</th><th></th></tr></thead><tbody id='rows'></tbody></table></div></div>
+@section Scripts {<script>document.addEventListener('DOMContentLoaded',async()=>{try{const d=await apiFetch('/api/contractor-ratings/my');const items=d.items||d||[];rows.innerHTML=items.length?items.map(x=>'<tr><td>'+escHtml(x.incidentNumber||x.assignmentNumber||x.invoiceNumber||x.id)+'</td><td>'+escHtml(x.title||x.incidentTitle||x.action||'Record')+'</td><td>'+escHtml(x.locationName||x.entityType||x.contractorName||x.proposal||'—')+'</td><td>'+statusBadge(x.status)+'</td><td><a class=\'btn btn-secondary btn-sm\' href=\'DETAIL?id='+x.id+'\'>View</a></td></tr>').join(''):'<tr><td colspan=5><div class=empty-state>No records found</div></td></tr>'}catch(e){showToast(e.message)}})</script>}

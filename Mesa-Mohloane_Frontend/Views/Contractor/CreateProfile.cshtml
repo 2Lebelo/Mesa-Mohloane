@@ -1,0 +1,63 @@
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "Create Company Profile";
+    ViewData["ActiveNav"] = "Profile";
+}
+
+@section Content {
+    <div class="page-header">
+        <h1 class="page-title">Create Company Profile</h1>
+        <div class="page-breadcrumb">
+            <a href="/Contractor/Dashboard">Home</a>
+            <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+            <span>Company Profile</span>
+        </div>
+    </div>
+
+    @if (ViewData["Error"] is not null)
+    {
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i><span>@ViewData["Error"]</span></div>
+    }
+
+    <div class="grid grid-2-1">
+        <form method="post" asp-action="CreateProfile" class="card">
+            @Html.AntiForgeryToken()
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Business Details</div>
+                    <div class="card-subtitle">This profile must be approved before tender submission</div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label" for="companyName">Company Name</label>
+                    <input id="companyName" name="companyName" class="form-control-light" required maxlength="150" placeholder="Maseru Build Co." />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="registrationNumber">Registration Number</label>
+                    <input id="registrationNumber" name="registrationNumber" class="form-control-light" required maxlength="80" placeholder="MB-2024-001" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="taxNumber">Tax Number</label>
+                    <input id="taxNumber" name="taxNumber" class="form-control-light" maxlength="80" placeholder="TX-98765" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="coverageArea">Coverage Area</label>
+                    <input id="coverageArea" name="coverageArea" class="form-control-light" required maxlength="150" placeholder="Maseru District" />
+                </div>
+            </div>
+            <div class="card-footer" style="display:flex;justify-content:flex-end;gap:.6rem;flex-wrap:wrap">
+                <a href="/Contractor/Profile" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Create Profile</button>
+            </div>
+        </form>
+
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Why this matters</div><div class="card-subtitle">Tender eligibility</div></div></div>
+            <div class="card-body">
+                <div class="alert alert-info"><i class="fa-solid fa-info-circle"></i><span>The backend ignores UserId in the request body and uses your JWT identity for security.</span></div>
+                <p class="text-sm text-muted">After approval, your company profile rating, job history, and performance metrics will be used by the smart tender evaluation algorithm.</p>
+            </div>
+        </div>
+    </div>
+}

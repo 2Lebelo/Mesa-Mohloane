@@ -1,0 +1,590 @@
+@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
+@{
+    string role = ViewData["Role"] as string ?? "Citizen";
+    string title = ViewData["Title"] as string ?? "Mesa Mohloane";
+    string active = ViewData["ActiveNav"] as string ?? "";
+    var afToken = Antiforgery.GetAndStoreTokens(ViewContext.HttpContext).RequestToken ?? "";
+    var nav = new Dictionary<string, (string href, string key, string icon, string text)[]>();
+    if (role == "Citizen")
+    {
+        nav["Overview"] = new[] { ("/Citizen/Dashboard", "Dashboard", "fa-gauge-high", "Dashboard") };
+        nav["Incidents"] = new[] { ("/Citizen/ReportIncident", "ReportIncident", "fa-plus-circle", "Report Incident"), ("/Citizen/MyIncidents", "MyIncidents", "fa-triangle-exclamation", "My Incidents") };
+        nav["Work Completion"] = new[] { ("/Citizen/CompletedJobs", "CompletedJobs", "fa-circle-check", "Completed Jobs"), ("/Citizen/Ratings", "Ratings", "fa-star", "Ratings") };
+        nav["Account"] = new[] { ("/Citizen/Notifications", "Notifications", "fa-bell", "Notifications"), ("/Citizen/Profile", "Profile", "fa-circle-user", "My Profile") };
+    }
+    else if (role == "Contractor")
+    {
+        nav["Overview"] = new[] { ("/Contractor/Dashboard", "Dashboard", "fa-gauge-high", "Dashboard") };
+        nav["Tendering"] = new[] { ("/Contractor/OpenIncidents", "OpenIncidents", "fa-briefcase", "Open Incidents"), ("/Contractor/MyTenders", "MyTenders", "fa-file-contract", "My Tenders") };
+        nav["Execution"] = new[] { ("/Contractor/MyAssignments", "MyAssignments", "fa-person-digging", "My Assignments"), ("/Contractor/Invoices", "Invoices", "fa-file-invoice-dollar", "Invoices") };
+        nav["Account"] = new[] { ("/Contractor/Ratings", "Ratings", "fa-star", "Ratings"), ("/Contractor/Notifications", "Notifications", "fa-bell", "Notifications"), ("/Contractor/Profile", "Profile", "fa-circle-user", "My Profile") };
+    }
+    else
+    {
+        nav["Overview"] = new[] { ("/Inspector/Dashboard", "Dashboard", "fa-gauge-high", "Dashboard") };
+        nav["Audit"] = new[] { ("/Inspector/AuditLogs", "AuditLogs", "fa-shield-halved", "Audit Logs"), ("/Inspector/IncidentActivity", "IncidentActivity", "fa-triangle-exclamation", "Incident Activity"), ("/Inspector/TenderActivity", "TenderActivity", "fa-file-contract", "Tender Activity") };
+        nav["Finance Review"] = new[] { ("/Inspector/FlaggedInvoices", "FlaggedInvoices", "fa-flag", "Flagged Invoices"), ("/Inspector/InvoiceReviews", "InvoiceReviews", "fa-file-invoice-dollar", "Invoice Reviews") };
+        nav["Account"] = new[] { ("/Inspector/Notifications", "Notifications", "fa-bell", "Notifications"), ("/Inspector/Profile", "Profile", "fa-circle-user", "My Profile") };
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>@title — Mesa Mohloane</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true">
+    <style>:root {
+            --primary: #1A6B3C;
+            --accent: #1B4F8A;
+            --bg: #F0F4F8;
+            --surface: #fff;
+            --surface-2: #F5F8FA;
+            --border: #D1DCE8;
+            --text-primary: #0D1B2A;
+            --text-muted: #7A93AC;
+            --danger: #DC2626;
+            --success: #16A34A;
+            --warning: #D97706;
+            --sidebar-w: 250px;
+            --font: 'Plus Jakarta Sans',sans-serif
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text-primary)
+        }
+
+        .app-layout {
+            display: flex;
+            min-height: 100vh
+        }
+
+        .sidebar {
+            width: var(--sidebar-w);
+            position: fixed;
+            inset: 0 auto 0 0;
+            background: linear-gradient(180deg,#0A1628,#0D2140);
+            display: flex;
+            flex-direction: column
+        }
+
+        .sidebar-brand {
+            display: flex;
+            gap: .7rem;
+            align-items: center;
+            padding: 1.4rem 1.25rem;
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255,255,255,.08)
+        }
+
+        .sidebar-brand-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .sidebar-brand span {
+            display: block;
+            font-size: .65rem;
+            color: #6B8BAD;
+            font-weight: 400
+        }
+
+        .sidebar-nav {
+            padding: 0 .7rem;
+            flex: 1
+        }
+
+        .sidebar-section {
+            padding: 1.15rem 1.1rem .35rem;
+            color: #3D5A78;
+            font-size: .63rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: .6rem .85rem;
+            border-radius: 7px;
+            color: #7A93AC;
+            text-decoration: none;
+            font-size: .845rem
+        }
+
+            .sidebar-link.active, .sidebar-link:hover {
+                background: var(--primary);
+                color: white
+            }
+
+            .sidebar-link i {
+                width: 17px
+            }
+
+        .sidebar-footer {
+            padding: .9rem .7rem;
+            border-top: 1px solid rgba(255,255,255,.06)
+        }
+
+        .sidebar-user {
+            display: flex;
+            gap: .75rem;
+            align-items: center;
+            color: #C8D8E8;
+            cursor: pointer
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-w);
+            width: calc(100% - var(--sidebar-w));
+            min-height: 100vh
+        }
+
+        .topbar {
+            height: 64px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.75rem;
+            position: sticky;
+            top: 0
+        }
+
+        .topbar-search {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: .42rem .85rem
+        }
+
+            .topbar-search input {
+                border: 0;
+                background: transparent;
+                outline: 0
+            }
+
+        .topbar-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #3D5166;
+            text-decoration: none
+        }
+
+        .page-content {
+            padding: 1.75rem
+        }
+
+        .page-header {
+            margin-bottom: 1.75rem
+        }
+
+        .page-title {
+            font-size: 1.35rem;
+            font-weight: 700
+        }
+
+        .page-breadcrumb {
+            display: flex;
+            gap: .4rem;
+            font-size: .78rem;
+            color: var(--text-muted);
+            margin-top: .2rem
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.2rem
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(4,1fr)
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3,1fr)
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2,1fr)
+        }
+
+        .grid-2-1 {
+            grid-template-columns: 2fr 1fr
+        }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: 0 1px 4px rgba(13,27,42,.07)
+        }
+
+        .card-header {
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid #E8EFF5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center
+        }
+
+        .card-title {
+            font-weight: 600
+        }
+
+        .card-subtitle, .text-muted {
+            color: var(--text-muted);
+            font-size: .78rem
+        }
+
+        .card-body {
+            padding: 1.5rem
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.35rem;
+            display: flex;
+            gap: .9rem
+        }
+
+        .stat-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center
+        }
+
+        .blue {
+            background: #E8F0FA;
+            color: var(--accent)
+        }
+
+        .green {
+            background: #E8F5EE;
+            color: var(--primary)
+        }
+
+        .amber {
+            background: #FFF8E8;
+            color: #D97706
+        }
+
+        .red {
+            background: #FEF2F2;
+            color: #DC2626
+        }
+
+        .purple {
+            background: #F5F3FF;
+            color: #7C3AED
+        }
+
+        .stat-value {
+            font-size: 1.7rem;
+            font-weight: 700
+        }
+
+        .stat-label {
+            font-size: .775rem;
+            color: var(--text-muted)
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .855rem
+        }
+
+            .table th {
+                padding: .7rem 1rem;
+                text-align: left;
+                background: var(--surface-2);
+                font-size: .7rem;
+                text-transform: uppercase;
+                color: var(--text-muted)
+            }
+
+            .table td {
+                padding: .82rem 1rem;
+                border-bottom: 1px solid #eef2f7
+            }
+
+        .table-wrap {
+            overflow-x: auto
+        }
+
+        .badge {
+            display: inline-flex;
+            padding: .2rem .65rem;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 500
+        }
+
+        .badge-success {
+            background: #ECFDF5;
+            color: #065F46
+        }
+
+        .badge-warning {
+            background: #FFFBEB;
+            color: #92400E
+        }
+
+        .badge-danger {
+            background: #FEF2F2;
+            color: #991B1B
+        }
+
+        .badge-info {
+            background: #EFF6FF;
+            color: #1E40AF
+        }
+
+        .badge-primary {
+            background: #E8F5EE;
+            color: #134F2D
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            padding: .6rem 1.2rem;
+            border-radius: 5px;
+            text-decoration: none;
+            border: 0;
+            cursor: pointer
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white
+        }
+
+        .btn-secondary {
+            background: var(--surface-2);
+            color: #3D5166;
+            border: 1px solid var(--border)
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white
+        }
+
+        .btn-sm {
+            padding: .38rem .82rem;
+            font-size: .785rem
+        }
+
+        .form-group {
+            margin-bottom: 1.1rem
+        }
+
+        .form-label {
+            display: block;
+            font-size: .78rem;
+            margin-bottom: .38rem;
+            color: #3D5166
+        }
+
+        .form-control-light, .form-select-light {
+            width: 100%;
+            padding: .58rem .9rem;
+            border: 1px solid var(--border);
+            border-radius: 5px
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2.5rem 1rem;
+            color: var(--text-muted)
+        }
+
+        .mb-3 {
+            margin-bottom: 1.5rem
+        }
+
+        .mt-2 {
+            margin-top: 1rem
+        }
+        @@media(max-width: 900px) {
+            .grid-4, .grid-3, .grid-2, .grid-2-1 {
+                grid-template-columns: 1fr
+            }
+
+            .sidebar {
+                display: none
+            }
+
+            .main-content {
+                margin-left: 0;
+                width: 100%
+            }
+        }</style>
+</head>
+<body data-authenticated="@(User?.Identity?.IsAuthenticated == true ? "true" : "false")"
+      data-user-name="@(ViewData["UserName"] ?? "")"
+      data-user-email="@(ViewData["UserEmail"] ?? "")"
+      data-user-role="@(ViewData["UserRole"] ?? "")"
+      data-jwt-token="@(ViewData["JwtToken"] ?? "")">
+    <script>
+        window.__API_BASE__ = '@(ViewContext.HttpContext.RequestServices.GetRequiredService<IConfiguration>()["ApiSettings:BaseUrl"] ?? "")';
+        window.__ANTI_FORGERY__ = '@afToken';
+        const token = document.body?.dataset?.jwtToken;
+        if (token && !localStorage.getItem('mesa_token')) localStorage.setItem('mesa_token', token);
+    </script>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <a href="/@role/Dashboard" class="sidebar-brand"><div class="sidebar-brand-icon"><i class="fa-solid fa-road"></i></div><div>Mesa Mohloane<span>Infrastructure System</span></div></a>
+            <nav class="sidebar-nav">
+                @foreach (var navSection in nav)
+                {
+                    <div class="sidebar-section">@navSection.Key</div>
+                    @foreach (var item in navSection.Value)
+                    {
+                        <a href="@item.href" class="sidebar-link @(active == item.key ? "active" : "")"><i class="fa-solid @item.icon"></i> @item.text</a>
+                    }
+                }
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user" onclick="logout()">
+                    <div class="avatar">@role.Substring(0, 1)</div><div>
+                        <div>@role</div>
+                        <small>@role Portal</small>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <div class="main-content">
+            <header class="topbar">
+                <div class="topbar-search">
+                    <i class="fa-solid fa-magnifying-glass"></i><input placeholder="Search…">
+                </div><a href="/@role/Notifications" class="topbar-btn"><i class="fa-solid fa-bell"></i></a>
+            </header>
+            <main class="page-content">
+             @if (IsSectionDefined("Content"))
+            {
+                @await RenderSectionAsync("Content", required: false)
+            }
+            else
+            {
+                @RenderBody()
+            }
+            </main>
+        </div>
+    </div>
+    <div id="toast-container"></div>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        async function apiFetch(path, options = {}) {
+            const token =
+                document.body?.dataset?.jwtToken ||
+                localStorage.getItem('mesa_token') ||
+                '';
+
+            const baseUrl = window.__API_BASE__ || '';
+            const url = path.startsWith('http')
+                ? path
+                : `${baseUrl}${path}`;
+
+            const headers = {
+                ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                ...(options.headers || {})
+            };
+
+            const res = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            if (!res.ok) {
+                let message = res.statusText || 'Request failed';
+
+                try {
+                    const err = await res.json();
+                    message = err.error || err.message || message;
+                } catch { }
+
+                throw new Error(message);
+            }
+
+            if (res.status === 204) return null;
+
+            const text = await res.text();
+            return text ? JSON.parse(text) : null;
+        }
+
+        function escHtml(value) {
+            const d = document.createElement('div');
+            d.appendChild(document.createTextNode(value ?? ''));
+            return d.innerHTML;
+        }
+
+        function statusBadge(status) {
+            return incidentStatusBadge(status);
+        }
+
+        function incidentStatusBadge(status) {
+            const map = {
+                0: '<span class="badge badge-dot incident-status-pending">Pending</span>',
+                1: '<span class="badge badge-dot incident-status-verified">Reported</span>',
+                2: '<span class="badge badge-dot incident-status-verified">Verified</span>',
+                3: '<span class="badge badge-dot incident-status-published">Published</span>',
+                4: '<span class="badge badge-dot incident-status-assigned">Assigned</span>',
+                5: '<span class="badge badge-dot incident-status-inprogress">In Progress</span>',
+                6: '<span class="badge badge-dot incident-status-completed">Completed</span>',
+                7: '<span class="badge badge-dot incident-status-closed">Closed</span>',
+                8: '<span class="badge badge-dot badge-danger">Rejected</span>'
+            };
+
+            return map[status] ?? `<span class="badge badge-gray">${escHtml(status)}</span>`;
+        }
+    </script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

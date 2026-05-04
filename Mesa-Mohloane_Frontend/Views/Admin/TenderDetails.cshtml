@@ -1,0 +1,81 @@
+@model Mesa_Mohloane_Frontend.Dtos.TenderApplicationDto
+
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    ViewData["Title"] = "Tender Details";
+    ViewData["ActiveNav"] = "Tenders";
+    var items = Model.LineItems ?? Array.Empty<Mesa_Mohloane_Frontend.Dtos.TenderLineItemDto>();
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Tender Details</h1>
+            <div class="page-breadcrumb">
+                <a href="/Admin/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <a href="/Admin/IncidentDetails?id=@Model.IncidentId">Incident Tenders</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>@Model.Id</span>
+            </div>
+        </div>
+        <a href="/Admin/IncidentDetails?id=@Model.IncidentId" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> Back to Incident</a>
+    </div>
+
+    <div class="grid grid-4 mb-3">
+        <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">M@Model.QuotedTotalAmount.ToString("N2")</div><div class="stat-label">Quoted Total</div></div></div>
+        <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-ranking-star"></i></div><div><div class="stat-value">@(Model.RankPosition <= 0 ? "—" : Model.RankPosition)</div><div class="stat-label">Rank</div></div></div>
+        <div class="stat-card"><div class="stat-icon amber"><i class="fa-solid fa-chart-line"></i></div><div><div class="stat-value">@Model.WeightedScore.ToString("0.00")</div><div class="stat-label">Weighted Score</div></div></div>
+        <div class="stat-card"><div class="stat-icon purple"><i class="fa-solid fa-calendar-day"></i></div><div><div class="stat-value">@Model.EstimatedTimelineDays</div><div class="stat-label">Timeline Days</div></div></div>
+    </div>
+
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Proposal</div><div class="card-subtitle">Contractor bid narrative</div></div><span class="badge badge-primary badge-dot">@Model.Status</span></div>
+            <div class="card-body"><p style="white-space:pre-wrap">@Model.ProposalText</p></div>
+        </div>
+        <div class="card">
+            <div class="card-header"><div><div class="card-title">Evaluation Breakdown</div><div class="card-subtitle">Smart ranking factors</div></div></div>
+            <div class="card-body" style="display:grid;gap:1rem">
+                <div><div class="text-sm text-muted">Cost Score</div><strong>@Model.CostScore.ToString("0.00")</strong></div>
+                <div><div class="text-sm text-muted">Rating Score</div><strong>@Model.RatingScore.ToString("0.00")</strong></div>
+                <div><div class="text-sm text-muted">Performance Score</div><strong>@Model.PerformanceScore.ToString("0.00")</strong></div>
+                <div><div class="text-sm text-muted">Evaluation Notes</div><strong>@(string.IsNullOrWhiteSpace(Model.EvaluationNotes) ? "—" : Model.EvaluationNotes)</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header"><div><div class="card-title">Line Items</div><div class="card-subtitle">Detailed quotation submitted by contractor</div></div></div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Category</th><th>Description</th><th>Qty</th><th>Unit</th><th>Unit Price</th><th>Total</th></tr></thead>
+                <tbody>
+                    @foreach (var item in items)
+                    {
+                        <tr>
+                            <td>@CategoryName(item.Category)</td>
+                            <td>@item.Description</td>
+                            <td>@item.Quantity.ToString("N2")</td>
+                            <td>@item.UnitOfMeasure</td>
+                            <td>M@item.UnitPrice.ToString("N2")</td>
+                            <td><strong>M@item.LineTotal.ToString("N2")</strong></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@functions {
+    private static string CategoryName(int category) => category switch
+    {
+        1 => "Labor",
+        2 => "Materials",
+        3 => "Equipment",
+        4 => "Transport",
+        5 => "Other",
+        _ => $"Category {category}"
+    };
+}

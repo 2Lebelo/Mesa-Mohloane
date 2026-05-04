@@ -1,0 +1,460 @@
+@model Mesa_Mohloane_Frontend.ViewModels.CitizenIncidentDetailViewModel
+
+@{
+    Layout = "~/Views/Shared/_CitizenShell.cshtml";
+    ViewData["Title"] = "Incident Details";
+    ViewData["ActiveNav"] = "MyIncidents";
+
+    var incident = Model.Incident;
+    var assignment = Model.Assignment;
+    var canEdit = incident.Status == 0;
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+        <div>
+            <h1 class="page-title">Incident @incident.IncidentNumber</h1>
+            <div class="page-breadcrumb">
+                <a asp-controller="Citizen" asp-action="MyIncidents">My Incidents</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Details</span>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <a asp-controller="Citizen" asp-action="MyIncidents" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left"></i>
+                Back
+            </a>
+
+            @if (canEdit)
+            {
+                <a asp-controller="Citizen"
+                   asp-action="EditIncident"
+                   asp-route-id="@incident.Id"
+                   class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-pen"></i>
+                    Edit
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <div class="grid grid-2-1">
+        <div style="display:flex;flex-direction:column;gap:1.2rem">
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">@incident.Title</div>
+                        <div class="card-subtitle">@incident.LocationName</div>
+                    </div>
+
+                    @Html.Raw(StatusBadge(incident.Status))
+                </div>
+
+                <div class="card-body">
+                    <p style="color:var(--text-secondary);white-space:pre-wrap">@incident.Description</p>
+
+                    <div class="grid grid-2 mt-3">
+                        <div>
+                            <div class="text-sm text-muted">Latitude</div>
+                            <div class="fw-600">@incident.Latitude</div>
+                        </div>
+
+                        <div>
+                            <div class="text-sm text-muted">Longitude</div>
+                            <div class="fw-600">@incident.Longitude</div>
+                        </div>
+
+                        <div>
+                            <div class="text-sm text-muted">Reported</div>
+                            <div class="fw-600">@incident.ReportedAt.ToString("dd MMM yyyy HH:mm")</div>
+                        </div>
+
+                        <div>
+                            <div class="text-sm text-muted">Verified</div>
+                            <div class="fw-600">@(incident.VerifiedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (canEdit)
+                {
+                    <div class="card-footer" style="display:flex;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+                        <form asp-controller="Citizen"
+                              asp-action="DeleteIncident"
+                              method="post"
+                              onsubmit="return confirm('Delete this pending incident? This cannot be undone.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@incident.Id" />
+
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="fa-solid fa-trash"></i>
+                                Delete Incident
+                            </button>
+                        </form>
+
+                        <span class="text-sm text-muted">Pending incidents can still be edited.</span>
+                    </div>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Photos</div>
+                        <div class="card-subtitle">Evidence uploaded with this incident</div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @if (incident.Photos?.Any() == true)
+                    {
+                        <div class="grid grid-3">
+                            @foreach (var photo in incident.Photos)
+                            {
+                                <div class="card" style="overflow:hidden">
+                                    <a href="@photo.ImageUrl" target="_blank" rel="noopener">
+                                        <img src="@photo.ImageUrl"
+                                             alt="Incident photo"
+                                             style="width:100%;height:160px;object-fit:cover;display:block" />
+                                    </a>
+
+                                    @if (canEdit)
+                                    {
+                                        <div style="padding:.65rem">
+                                            <form asp-controller="Citizen"
+                                                  asp-action="DeletePhoto"
+                                                  method="post"
+                                                  onsubmit="return confirm('Remove this photo?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="incidentId" value="@incident.Id" />
+                                                <input type="hidden" name="photoId" value="@photo.Id" />
+
+                                                <button type="submit" class="btn btn-danger btn-sm" style="width:100%">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                    Remove
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="fa-solid fa-image"></i>
+                            <h4>No photos uploaded</h4>
+                            <p>Photos help administrators verify the incident faster.</p>
+                        </div>
+                    }
+                </div>
+
+                @if (canEdit)
+                {
+                    <div class="card-footer">
+                        <form asp-controller="Citizen"
+                              asp-action="AddPhotos"
+                              method="post"
+                              enctype="multipart/form-data"
+                              style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@incident.Id" />
+
+                            <input class="form-control-light"
+                                   name="photos"
+                                   type="file"
+                                   accept="image/*"
+                                   multiple
+                                   style="max-width:360px" />
+
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fa-solid fa-plus"></i>
+                                Add Photos
+                            </button>
+                        </form>
+                    </div>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Work Completion Confirmation</div>
+                        <div class="card-subtitle">Confirm whether the contractor completed the work satisfactorily</div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @if (assignment is null)
+                    {
+                        <div class="empty-state">
+                            <i class="fa-solid fa-briefcase"></i>
+                            <h4>No assignment yet</h4>
+                            <p>A contractor has not yet been assigned to this incident.</p>
+                        </div>
+                    }
+                    else if (Model.CanAcknowledge)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>
+                                The contractor has marked the work as completed. Please acknowledge completion if the work was done satisfactorily.
+                            </span>
+                        </div>
+
+                        <div style="display:grid;gap:1rem;margin-bottom:1rem">
+                            <div>
+                                <div class="text-sm text-muted">Assignment ID</div>
+                                <div style="font-family:var(--font-mono);font-size:.8rem">@assignment.Id</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Completed At</div>
+                                <div class="fw-600">@(assignment.CompletedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+                        </div>
+
+                        <form asp-controller="Citizen"
+                              asp-action="AcknowledgeAssignment"
+                              method="post"
+                              onsubmit="return confirm('Confirm that this work has been completed satisfactorily?');">
+                            @Html.AntiForgeryToken()
+
+                            <input type="hidden" name="assignmentId" value="@assignment.Id" />
+                            <input type="hidden" name="incidentId" value="@incident.Id" />
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-circle-check"></i>
+                                Acknowledge Completed Work
+                            </button>
+                        </form>
+                    }
+                    else if (Model.IsAwaitingAdminApproval)
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa-solid fa-hourglass-half"></i>
+                            <span>
+                                You have acknowledged completion. The assignment is now awaiting administrator approval.
+                            </span>
+                        </div>
+
+                        <div style="display:grid;gap:1rem">
+                            <div>
+                                <div class="text-sm text-muted">Acknowledged At</div>
+                                <div class="fw-600">@(assignment.CitizenAcknowledgedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+                        </div>
+                    }
+                    else if (Model.IsAdminApproved)
+                    {
+                        <div class="alert alert-success">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>
+                                The work completion has been approved by the administrator.
+                            </span>
+                        </div>
+
+                        <div style="display:grid;gap:1rem">
+                            <div>
+                                <div class="text-sm text-muted">Admin Approved At</div>
+                                <div class="fw-600">@(assignment.AdminApprovedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+                        </div>
+                    }
+                    else if (assignment.Status == 1)
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa-solid fa-briefcase"></i>
+                            <span>A contractor has been assigned, but work has not started yet.</span>
+                        </div>
+                    }
+                    else if (assignment.Status == 2)
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa-solid fa-person-digging"></i>
+                            <span>Work is currently in progress. You will be able to acknowledge after the contractor submits completion.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="fa-solid fa-clock"></i>
+                            <h4>No action required</h4>
+                            <p>No citizen action is currently available for this assignment.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:1.2rem">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Status Timeline</div>
+                        <div class="card-subtitle">Current lifecycle stage</div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div style="display:flex;flex-direction:column;gap:.75rem">
+                        <span class="badge badge-warning badge-dot">
+                            Submitted: @incident.ReportedAt.ToString("dd MMM yyyy")
+                        </span>
+
+                        <span class="badge @(incident.Status >= 2 && incident.Status != 8 ? "badge-blue" : "badge-gray") badge-dot">
+                            Verified
+                        </span>
+
+                        <span class="badge @(incident.Status >= 3 && incident.Status != 8 ? "badge-primary" : "badge-gray") badge-dot">
+                            Published
+                        </span>
+
+                        <span class="badge @(incident.Status >= 4 && incident.Status != 8 ? "badge-purple" : "badge-gray") badge-dot">
+                            Assigned
+                        </span>
+
+                        <span class="badge @(incident.Status >= 5 && incident.Status != 8 ? "badge-info" : "badge-gray") badge-dot">
+                            In Progress
+                        </span>
+
+                        <span class="badge @(incident.Status >= 6 && incident.Status != 8 ? "badge-success" : "badge-gray") badge-dot">
+                            Completed
+                        </span>
+
+                        @if (assignment is not null)
+                        {
+                            <div class="divider"></div>
+
+                            <span class="badge @(assignment.Status >= 3 ? "badge-success" : "badge-gray") badge-dot">
+                                Contractor Completion Submitted
+                            </span>
+
+                            <span class="badge @(assignment.Status >= 4 ? "badge-warning" : "badge-gray") badge-dot">
+                                Citizen Acknowledged
+                            </span>
+
+                            <span class="badge @(assignment.Status >= 5 ? "badge-primary" : "badge-gray") badge-dot">
+                                Admin Approved
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Assignment Reference</div>
+                        <div class="card-subtitle">Work execution details</div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @if (assignment is null)
+                    {
+                        <div class="empty-state" style="padding:1rem">
+                            <i class="fa-solid fa-briefcase"></i>
+                            <h4>No assignment</h4>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="display:grid;gap:1rem">
+                            <div>
+                                <div class="text-sm text-muted">Assignment Status</div>
+                                <div>@Html.Raw(AssignmentStatusBadge(assignment.Status))</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Assigned At</div>
+                                <div class="fw-600">@assignment.AssignedAt.ToString("dd MMM yyyy HH:mm")</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Started At</div>
+                                <div class="fw-600">@(assignment.StartedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Completed At</div>
+                                <div class="fw-600">@(assignment.CompletedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Acknowledged At</div>
+                                <div class="fw-600">@(assignment.CitizenAcknowledgedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Map Reference</div>
+                        <div class="card-subtitle">External location lookup</div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <a class="btn btn-secondary"
+                       target="_blank"
+                       rel="noopener"
+                       href="https://www.google.com/maps?q=@incident.Latitude,@incident.Longitude">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                        Open in Google Maps
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    private static string StatusBadge(int status) => status switch
+    {
+        0 => "<span class=\"badge badge-warning badge-dot\">Pending</span>",
+        1 => "<span class=\"badge badge-info badge-dot\">Reported</span>",
+        2 => "<span class=\"badge badge-blue badge-dot\">Verified</span>",
+        3 => "<span class=\"badge badge-primary badge-dot\">Published</span>",
+        4 => "<span class=\"badge badge-purple badge-dot\">Assigned</span>",
+        5 => "<span class=\"badge badge-info badge-dot\">In Progress</span>",
+        6 => "<span class=\"badge badge-success badge-dot\">Completed</span>",
+        7 => "<span class=\"badge badge-gray badge-dot\">Closed</span>",
+        8 => "<span class=\"badge badge-danger badge-dot\">Rejected</span>",
+        _ => $"<span class=\"badge badge-gray\">{status}</span>"
+    };
+
+    private static string AssignmentStatusBadge(int status) => status switch
+    {
+        1 => "<span class=\"badge badge-purple badge-dot\">Assigned</span>",
+        2 => "<span class=\"badge badge-info badge-dot\">Started</span>",
+        3 => "<span class=\"badge badge-success badge-dot\">Completed</span>",
+        4 => "<span class=\"badge badge-warning badge-dot\">Awaiting Approval</span>",
+        5 => "<span class=\"badge badge-primary badge-dot\">Approved</span>",
+        6 => "<span class=\"badge badge-gray badge-dot\">Closed</span>",
+        _ => $"<span class=\"badge badge-gray\">{status}</span>"
+    };
+}

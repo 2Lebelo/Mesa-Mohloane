@@ -1,0 +1,74 @@
+@model Mesa_Mohloane_Frontend.ViewModels.AdminIncidentDetailViewModel
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    ViewData["Title"] = "Incident Details";
+    ViewData["ActiveNav"] = "Incidents";
+    var incident = Model.Incident;
+    var canVerifyOrReject = incident.Status is 0 or 1;
+    var canPublish = incident.Status == 2;
+}
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap"><div><h1 class="page-title">Incident @incident.IncidentNumber</h1><div class="page-breadcrumb"><a href="/Admin/Incidents">Incidents</a><i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i><span>Details</span></div></div><a href="/Admin/Incidents" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a></div>
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i><span>@TempData["Success"]</span></div>
+    }
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i><span>@TempData["Error"]</span></div>
+    }
+    <div class="grid grid-2-1">
+        <div style="display:flex;flex-direction:column;gap:1.2rem">
+            <div class="card"><div class="card-header"><div><div class="card-title">@incident.Title</div><div class="card-subtitle">@incident.LocationName</div></div>@Html.Raw(StatusBadge(incident.Status))</div><div class="card-body"><p style="color:var(--text-secondary);white-space:pre-wrap">@incident.Description</p><div class="grid grid-2 mt-3"><div><div class="text-sm text-muted">Citizen Id</div><div class="fw-600" style="font-family:var(--font-mono);font-size:.78rem">@incident.CitizenId</div></div><div><div class="text-sm text-muted">Latitude</div><div class="fw-600">@incident.Latitude</div></div><div><div class="text-sm text-muted">Longitude</div><div class="fw-600">@incident.Longitude</div></div><div><div class="text-sm text-muted">Reported</div><div class="fw-600">@incident.ReportedAt.ToString("dd MMM yyyy HH:mm")</div></div></div></div><div class="card-footer" style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:space-between"><div style="display:flex;gap:.5rem;flex-wrap:wrap">@if (canVerifyOrReject) {
+            <form asp-action="VerifyIncident" asp-controller="Admin" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@incident.Id" /><button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check"></i> Verify</button></form>
+            <button type="button" class="btn btn-danger btn-sm" onclick="openModal('reject-modal')"><i class="fa-solid fa-ban"></i> Reject</button>
+ }
+@if(canPublish) {
+            <form asp-action="PublishIncident" asp-controller="Admin" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@incident.Id" /><button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-bullhorn"></i> Publish for Bidding</button></form>
+        }
+</div><a class="btn btn-secondary btn-sm" target="_blank" rel="noopener" href="https://www.google.com/maps?q=@incident.Latitude,@incident.Longitude"><i class="fa-solid fa-map-location-dot"></i> Map</a></div></div>
+        <div class="card"><div class="card-header"><div><div class="card-title">Incident Photos</div><div class="card-subtitle">Evidence submitted by citizen</div></div></div><div class="card-body">@if (incident.Photos?.Any() == true) {
+        <div class="grid grid-3">@foreach (var photo in incident.Photos) {
+        <a href="@photo.ImageUrl" target="_blank" rel="noopener" class="card" style="overflow:hidden;text-decoration:none"><img src="@photo.ImageUrl" alt="Incident photo" style="width:100%;height:160px;object-fit:cover;display:block" /><div style="padding:.65rem;color:var(--text-muted);font-size:.75rem">@(photo.Caption ?? "Incident photo")</div></a>
+                }
+</div>
+                } else
+        {
+
+            <div class="empty-state"><i class="fa-solid fa-image"></i><h4>No photos submitted</h4><p>This incident was submitted without photo evidence.</p></div>
+        }
+</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1.2rem">
+        <div class="card"><div class="card-header"><div><div class="card-title">Workflow Gate</div><div class="card-subtitle">Allowed administrative action</div></div></div><div class="card-body">@if (canVerifyOrReject) {
+        <div class="alert alert-warning" style="margin:0"><i class="fa-solid fa-clock"></i><span>This incident is waiting for administrator verification.</span></div>
+                } else if (canPublish)
+        {
+
+            <div class="alert alert-info" style="margin:0"><i class="fa-solid fa-circle-info"></i><span>This incident is verified and can now be published for contractor bidding.</span></div>
+        }
+        else
+        {
+
+            <div class="alert alert-success" style="margin:0"><i class="fa-solid fa-circle-check"></i><span>No immediate admin action is required for this status.</span></div>
+        }
+</div></div>
+        <div class="card"><div class="card-header"><div><div class="card-title">Tender Applications</div><div class="card-subtitle">Submitted contractor bids</div></div>@if (incident.Status == 3 && Model.Tenders.Any()) {
+        <form asp-action="EvaluateTenders" asp-controller="Admin" method="post">@Html.AntiForgeryToken()<input type="hidden" name="incidentId" value="@incident.Id" /><button class="btn btn-secondary btn-sm" type="submit"><i class="fa-solid fa-ranking-star"></i> Evaluate</button></form>
+                }
+</div><div class="table-wrap"><table class="table"><thead><tr><th>Contractor</th><th>Quote</th><th>Status</th><th>Score</th><th>Rank</th><th></th></tr></thead><tbody>@if (Model.Tenders.Any()) { foreach (var tender in Model.Tenders.OrderBy(t => t.RankPosition == 0 ? int.MaxValue : t.RankPosition)) {
+        <tr><td style="font-family:var(--font-mono);font-size:.75rem">@tender.ContractorId</td><td>M @tender.QuotedTotalAmount.ToString("N2")</td><td>@tender.Status</td><td>@tender.WeightedScore.ToString("N2")</td><td>@(tender.RankPosition == 0 ? "—" : tender.RankPosition)</td><td>@if (incident.Status == 3) {
+        <form asp-action="AssignTender" asp-controller="Admin" method="post">@Html.AntiForgeryToken()<input type="hidden" name="incidentId" value="@incident.Id" /><input type="hidden" name="tenderId" value="@tender.Id" /><button class="btn btn-primary btn-sm" type="submit">Assign</button></form>
+                }
+</td></tr>
+                } } else
+        {
+
+            <tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-file-contract"></i><h4>No tenders submitted yet</h4><p>Contractor tenders will appear after the incident is published.</p></div></td></tr>
+        }
+</tbody></table></div></div>
+    </div>
+</div>
+<div class="modal-overlay" id="reject-modal"><div class="modal"><form asp-action="RejectIncident" asp-controller="Admin" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@incident.Id" /><div class="modal-header"><div class="modal-title">Reject Incident</div><button type="button" class="modal-close" data-close-modal="reject-modal"><i class="fa-solid fa-xmark"></i></button></div><div class="modal-body"><div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation"></i><span>Please provide a clear reason. The citizen will see this in their notification.</span></div><div class="form-group"><label class="form-label">Rejection reason</label><textarea class="form-control-light" name="reason" rows="4" required placeholder="Explain why this incident cannot be verified."></textarea></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary btn-sm" data-close-modal="reject-modal">Cancel</button><button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-ban"></i> Reject Incident</button></div></form></div></div>
+}
+@functions { private static string StatusBadge(int status) => status switch { 0 => "<span class=\"badge badge-warning badge-dot\">Pending</span>", 1 => "<span class=\"badge badge-info badge-dot\">Reported</span>", 2 => "<span class=\"badge badge-blue badge-dot\">Verified</span>", 3 => "<span class=\"badge badge-primary badge-dot\">Published</span>", 4 => "<span class=\"badge badge-purple badge-dot\">Assigned</span>", 5 => "<span class=\"badge badge-info badge-dot\">In Progress</span>", 6 => "<span class=\"badge badge-success badge-dot\">Completed</span>", 7 => "<span class=\"badge badge-gray badge-dot\">Closed</span>", 8 => "<span class=\"badge badge-danger badge-dot\">Rejected</span>", _ => $"<span class=\"badge badge-gray\">{status}</span>" }; }

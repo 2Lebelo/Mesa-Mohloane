@@ -1,0 +1,259 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.IncidentListItemDto>
+
+@{
+    Layout = "~/Views/Shared/_CitizenShell.cshtml";
+    ViewData["Title"] = "My Incidents";
+    ViewData["ActiveNav"] = "MyIncidents";
+
+    var items = Model?.Items ?? Array.Empty<Mesa_Mohloane_Frontend.Dtos.IncidentListItemDto>();
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var totalCount = Model?.TotalCount ?? 0;
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+        <div>
+            <h1 class="page-title">My Incidents</h1>
+            <div class="page-breadcrumb">
+                <a asp-controller="Citizen" asp-action="Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>My Incidents</span>
+            </div>
+        </div>
+
+        <a asp-controller="Citizen"
+           asp-action="ReportIncident"
+           class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus"></i>
+            Report Incident
+        </a>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <div class="grid grid-4 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <div class="stat-value">@totalCount</div>
+                <div class="stat-label">Total Reports</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-value">@items.Count(x => x.Status is 0 or 1 or 2)</div>
+                <div class="stat-label">Under Review</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon teal">
+                <i class="fa-solid fa-person-digging"></i>
+            </div>
+            <div>
+                <div class="stat-value">@items.Count(x => x.Status == 5)</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <div class="stat-value">@items.Count(x => x.Status == 6)</div>
+                <div class="stat-label">Ready to Review</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Incident Register</div>
+                <div class="card-subtitle">Infrastructure issues you submitted</div>
+            </div>
+
+            <span class="badge badge-gray">@totalCount records</span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Incident #</th>
+                        <th>Title</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Reported</th>
+                        <th class="actions">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (items.Any())
+                    {
+                        foreach (var incident in items)
+                        {
+                            <tr>
+                                <td>
+                                    <span style="font-family:var(--font-mono);font-size:.78rem;color:var(--accent);font-weight:600">
+                                        @incident.IncidentNumber
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="fw-600">@incident.Title</div>
+
+                                    @if (incident.Status == 6)
+                                    {
+                                        <div class="text-sm" style="color:var(--success);margin-top:.2rem">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                            Contractor marked work completed
+                                        </div>
+                                    }
+                                </td>
+
+                                <td class="text-sm text-muted">
+                                    @incident.LocationName
+                                </td>
+
+                                <td>
+                                    @Html.Raw(StatusBadge(incident.Status))
+                                </td>
+
+                                <td class="text-sm text-muted">
+                                    @incident.ReportedAt.ToString("dd MMM yyyy")
+                                </td>
+
+                                <td class="actions">
+                                    @if (incident.Status == 6)
+                                    {
+                                        <a asp-controller="Citizen"
+                                           asp-action="IncidentDetails"
+                                           asp-route-id="@incident.Id"
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                            Review Completion
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Citizen"
+                                           asp-action="IncidentDetails"
+                                           asp-route-id="@incident.Id"
+                                           class="btn btn-secondary btn-sm">
+                                            <i class="fa-solid fa-eye"></i>
+                                            View
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <h4>No incidents reported yet</h4>
+                                    <p>Use the report form to submit your first infrastructure issue.</p>
+
+                                    <a asp-controller="Citizen"
+                                       asp-action="ReportIncident"
+                                       class="btn btn-primary btn-sm mt-2">
+                                        <i class="fa-solid fa-plus"></i>
+                                        Report Incident
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model is not null && totalPages > 1)
+        {
+            <div class="pagination">
+                <div class="pagination-info">
+                    Page @currentPage of @totalPages • @totalCount records
+                </div>
+
+                <div class="pagination-nav">
+                    @if (currentPage > 1)
+                    {
+                        <a asp-controller="Citizen"
+                           asp-action="MyIncidents"
+                           asp-route-page="@(currentPage - 1)"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                    }
+
+                    <span class="page-btn active">@currentPage</span>
+
+                    @if (currentPage < totalPages)
+                    {
+                        <a asp-controller="Citizen"
+                           asp-action="MyIncidents"
+                           asp-route-page="@(currentPage + 1)"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@functions {
+    private static string StatusBadge(int status) => status switch
+    {
+        0 => "<span class=\"badge badge-warning badge-dot\">Pending</span>",
+        1 => "<span class=\"badge badge-info badge-dot\">Reported</span>",
+        2 => "<span class=\"badge badge-blue badge-dot\">Verified</span>",
+        3 => "<span class=\"badge badge-primary badge-dot\">Published</span>",
+        4 => "<span class=\"badge badge-purple badge-dot\">Assigned</span>",
+        5 => "<span class=\"badge badge-info badge-dot\">In Progress</span>",
+        6 => "<span class=\"badge badge-success badge-dot\">Completed</span>",
+        7 => "<span class=\"badge badge-gray badge-dot\">Closed</span>",
+        8 => "<span class=\"badge badge-danger badge-dot\">Rejected</span>",
+        _ => $"<span class=\"badge badge-gray\">{status}</span>"
+    };
+}

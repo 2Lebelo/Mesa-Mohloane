@@ -1,8 +1,265 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        background: #ffffff;
+        overflow-x: hidden;
+    }
+
+    .landing-page {
+        width: 100%;
+        min-height: 100vh;
+        font-family: Inter, Arial, sans-serif;
+        background: #ffffff;
+    }
+
+    .landing-header {
+        width: 100%;
+        height: 86px;
+        padding: 0 70px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #eeeeee;
+        background: #ffffff;
+        position: relative;
+        z-index: 10;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        color: #061a4f;
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    .brand-icon {
+        width: 30px;
+        height: 22px;
+        background: #1473ff;
+        border-radius: 14px;
+        position: relative;
+    }
+
+        .brand-icon::before,
+        .brand-icon::after {
+            content: "";
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #1473ff;
+            border-radius: 50%;
+            top: -6px;
+        }
+
+        .brand-icon::before {
+            left: 4px;
+        }
+
+        .brand-icon::after {
+            right: 4px;
+        }
+
+    .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 34px;
+    }
+
+        .nav-links a {
+            color: #000000;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .nav-links span {
+            color: #cfcfcf;
+        }
+
+    .hero {
+        width: 100%;
+        min-height: calc(100vh - 86px);
+        display: grid;
+        grid-template-columns: minmax(0, 46%) minmax(0, 54%);
+        overflow: hidden;
+    }
+
+    .hero-content {
+        padding: 8px 40px 80px 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-title {
+        max-width: 660px;
+        margin: 0 0 32px;
+        color: #071a4d;
+        font-size: clamp(58px, 5.8vw, 96px);
+        line-height: 1.04;
+        letter-spacing: -4px;
+        font-weight: 900;
+    }
+
+        .hero-title em {
+            font-family: Georgia, "Times New Roman", serif;
+            font-style: italic;
+            font-weight: 400;
+        }
+
+    .hero-text {
+        max-width: 520px;
+        margin: 0 0 36px;
+        color: #000000;
+        font-size: 15px;
+        line-height: 1.65;
+    }
+
+    .hero-btn {
+        width: fit-content;
+        min-width: 112px;
+        height: 50px;
+        padding: 0 24px;
+        background: #1473ff;
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 800;
+        border-radius: 0;
+        transition: 0.2s ease;
+    }
+
+        .hero-btn:hover {
+            background: #005de0;
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+    .hero-image-area {
+        position: relative;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .hero-image {
+        width: 100%;
+        height: 100%;
+        min-height: calc(100vh - 86px);
+        object-fit: cover;
+        object-position: center center;
+        display: block;
+    }
+
+    @@media (max-width: 992px) {
+        .landing-header {
+            padding: 0 28px;
+        }
+
+        .hero {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-content {
+            padding: 70px 28px 48px;
+        }
+
+        .hero-title {
+            font-size: 54px;
+            letter-spacing: -2px;
+        }
+
+        .hero-image {
+            min-height: 480px;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .landing-header {
+            height: auto;
+            padding: 22px;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .brand {
+            font-size: 18px;
+        }
+
+        .nav-links {
+            gap: 14px;
+            font-size: 13px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+            .nav-links a {
+                font-size: 13px;
+            }
+
+        .hero-content {
+            padding: 50px 22px 40px;
+        }
+
+        .hero-title {
+            font-size: 42px;
+            line-height: 1.1;
+        }
+    }
+</style>
+
+<div class="landing-page">
+    <header class="landing-header">
+        <a class="brand" asp-controller="Home" asp-action="Index">
+            <span class="brand-icon"></span>
+            <span>Mesa Mohloane</span>
+        </a>
+
+        <nav class="nav-links">
+            <a asp-controller="Home" asp-action="About">About us</a>
+            <span>/</span>
+            <a asp-controller="Home" asp-action="Solutions">Solutions</a>
+            <span>/</span>
+            <a asp-controller="Home" asp-action="Technology">Technology</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                Mesa Mohloane Smart <em>City</em> Infrastructure
+            </h1>
+
+            <p class="hero-text">
+                We empower communities with cutting-edge infrastructure solutions that
+                enhance efficiency, safety, and quality of life. Our innovative
+                technologies create vibrant, connected communities.
+            </p>
+
+            <a class="hero-btn" asp-controller="Auth" asp-action="Register">
+                Sign Up
+            </a>
+        </div>
+
+        <div class="hero-image-area">
+            <img class="hero-image"
+                 src="~/images/Hero_Image.jpg"
+                 alt="Mesa Mohloane smart city infrastructure illustration" />
+        </div>
+    </section>
 </div>

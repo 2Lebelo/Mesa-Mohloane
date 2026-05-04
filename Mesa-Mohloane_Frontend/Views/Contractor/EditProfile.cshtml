@@ -1,0 +1,67 @@
+@model Mesa_Mohloane_Frontend.Dtos.ContractorProfileDto
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "Edit Company Profile";
+    ViewData["ActiveNav"] = "Profile";
+}
+
+@section Content {
+    <div class="page-header">
+        <h1 class="page-title">Edit Company Profile</h1>
+        <div class="page-breadcrumb">
+            <a href="/Contractor/Profile">Company Profile</a>
+            <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+            <span>Edit</span>
+        </div>
+    </div>
+
+    @if (ViewData["Error"] is not null)
+    {
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i><span>@ViewData["Error"]</span></div>
+    }
+
+    <form method="post" asp-action="EditProfile" class="card">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" value="@Model.Id" />
+        <div class="card-header">
+            <div>
+                <div class="card-title">Update Business Details</div>
+                <div class="card-subtitle">Changing profile details may require renewed administrative review depending on backend rules</div>
+            </div>
+            @if (Model.IsApproved)
+            {
+                <span class="badge badge-success badge-dot">Approved</span>
+            }
+            else
+            {
+                <span class="badge badge-warning badge-dot">Awaiting Approval</span>
+            }
+        </div>
+        <div class="card-body">
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="companyName">Company Name</label>
+                    <input id="companyName" name="companyName" class="form-control-light" required maxlength="150" value="@Model.CompanyName" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="registrationNumber">Registration Number</label>
+                    <input id="registrationNumber" name="registrationNumber" class="form-control-light" required maxlength="80" value="@Model.RegistrationNumber" />
+                </div>
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="taxNumber">Tax Number</label>
+                    <input id="taxNumber" name="taxNumber" class="form-control-light" maxlength="80" value="@Model.TaxNumber" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="coverageArea">Coverage Area</label>
+                    <input id="coverageArea" name="coverageArea" class="form-control-light" required maxlength="150" value="@Model.CoverageArea" />
+                </div>
+            </div>
+        </div>
+        <div class="card-footer" style="display:flex;justify-content:flex-end;gap:.6rem;flex-wrap:wrap">
+            <a href="/Contractor/Profile" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save"></i> Save Changes</button>
+        </div>
+    </form>
+}

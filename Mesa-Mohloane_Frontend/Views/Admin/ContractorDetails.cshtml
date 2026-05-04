@@ -1,0 +1,266 @@
+﻿@model Mesa_Mohloane_Frontend.Dtos.ContractorProfileDto
+
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    ViewData["Title"] = "Contractor Details";
+    ViewData["ActiveNav"] = "Contractors";
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Contractor Details</h1>
+            <div class="page-breadcrumb">
+                <a href="/Admin/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <a href="/Admin/Contractors">Contractors</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>@Model.CompanyName</span>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:.65rem;flex-wrap:wrap">
+            <a href="/Admin/Contractors" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left"></i>
+                Back to Contractors
+            </a>
+
+            @if (!Model.IsApproved)
+            {
+                <form method="post"
+                      asp-action="ApproveContractorProfile"
+                      style="display:inline"
+                      onsubmit="return confirm('Approve this contractor profile?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-check"></i>
+                        Approve Profile
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-check-circle"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <div class="grid grid-4 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fa-solid fa-helmet-safety"></i>
+            </div>
+            <div>
+                <div class="stat-value">
+                    @(Model.IsApproved ? "Yes" : "No")
+                </div>
+                <div class="stat-label">Approved</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-star"></i>
+            </div>
+            <div>
+                <div class="stat-value">@Model.AverageRating.ToString("0.0")</div>
+                <div class="stat-label">Average Rating</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-briefcase"></i>
+            </div>
+            <div>
+                <div class="stat-value">@Model.CompletedJobsCount</div>
+                <div class="stat-label">Completed Jobs</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="fa-solid fa-clock"></i>
+            </div>
+            <div>
+                <div class="stat-value">@Model.LateCompletionCount</div>
+                <div class="stat-label">Late Completions</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Company Information</div>
+                    <div class="card-subtitle">Business identity and operating details</div>
+                </div>
+
+                @if (Model.IsApproved)
+                {
+                    <span class="badge badge-success badge-dot">Approved</span>
+                }
+                else
+                {
+                    <span class="badge badge-warning badge-dot">Pending Approval</span>
+                }
+        </div>
+
+        <div class="card-body">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.4rem">
+                <div style="width:58px;height:58px;border-radius:16px;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem">
+                    @(string.IsNullOrWhiteSpace(Model.CompanyName)
+                                        ? "C"
+                                        : string.Join("", Model.CompanyName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => x[0])).ToUpper())
+                    </div>
+
+                    <div>
+                        <h2 style="font-size:1.15rem;font-weight:700;margin:0;color:var(--text-primary)">
+                            @Model.CompanyName
+                        </h2>
+                        <div class="text-sm text-muted">
+                            Contractor Profile ID:
+                            <span style="font-family:var(--font-mono)">@Model.Id</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                    <div>
+                        <div class="text-sm text-muted">Registration Number</div>
+                        <div class="fw-600" style="font-family:var(--font-mono)">
+                            @Model.RegistrationNumber
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm text-muted">Tax Number</div>
+                        <div class="fw-600" style="font-family:var(--font-mono)">
+                            @(string.IsNullOrWhiteSpace(Model.TaxNumber) ? "—" : Model.TaxNumber)
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm text-muted">Coverage Area</div>
+                        <div class="fw-600">@Model.CoverageArea</div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm text-muted">User ID</div>
+                        <div class="fw-600" style="font-family:var(--font-mono);font-size:.78rem">
+                            @Model.UserId
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Approval Status</div>
+                    <div class="card-subtitle">Administrative profile review state</div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                @if (Model.IsApproved)
+                {
+                    <div class="alert alert-success" style="margin-bottom:1rem">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>This contractor profile has been approved and can participate in tenders.</span>
+                    </div>
+
+                    <div style="display:grid;gap:1rem">
+                        <div>
+                            <div class="text-sm text-muted">Approved At</div>
+                            <div class="fw-600">
+                                @(Model.ApprovedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="text-sm text-muted">Approved By Admin ID</div>
+                            <div class="fw-600" style="font-family:var(--font-mono);font-size:.78rem">
+                                @(Model.ApprovedByAdminId?.ToString() ?? "—")
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning" style="margin-bottom:1rem">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>This profile is still pending approval. The contractor cannot submit tenders until approved.</span>
+                    </div>
+
+                    <form method="post"
+                          asp-action="ApproveContractorProfile"
+                          onsubmit="return confirm('Approve this contractor profile?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-check"></i>
+                            Approve Contractor Profile
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Performance Summary</div>
+                <div class="card-subtitle">Operational history used during tender evaluation</div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="grid grid-3">
+                <div style="padding:1rem;border:1px solid var(--border-light);border-radius:var(--radius);background:var(--surface-2)">
+                    <div class="text-sm text-muted">Average Rating</div>
+                    <div style="font-size:1.6rem;font-weight:700;color:var(--warning)">
+                        ★ @Model.AverageRating.ToString("0.0")
+                    </div>
+                    <div class="text-sm text-muted">Citizen feedback score</div>
+                </div>
+
+                <div style="padding:1rem;border:1px solid var(--border-light);border-radius:var(--radius);background:var(--surface-2)">
+                    <div class="text-sm text-muted">Completed Jobs</div>
+                    <div style="font-size:1.6rem;font-weight:700;color:var(--success)">
+                        @Model.CompletedJobsCount
+                    </div>
+                    <div class="text-sm text-muted">Approved/completed assignments</div>
+                </div>
+
+                <div style="padding:1rem;border:1px solid var(--border-light);border-radius:var(--radius);background:var(--surface-2)">
+                    <div class="text-sm text-muted">Late Completions</div>
+                    <div style="font-size:1.6rem;font-weight:700;color:var(--danger)">
+                        @Model.LateCompletionCount
+                    </div>
+                    <div class="text-sm text-muted">Jobs completed after expected timeline</div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

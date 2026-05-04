@@ -1,0 +1,209 @@
+@model Mesa_Mohloane_Frontend.ViewModels.SubmitTenderViewModel
+
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "Submit Tender";
+    ViewData["ActiveNav"] = "OpenIncidents";
+
+    var incident = Model?.Incident;
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Submit Digital Tender</h1>
+            <div class="page-breadcrumb">
+                <a href="/Contractor/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <a href="/Contractor/OpenIncidents">Open Incidents</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Submit Tender</span>
+            </div>
+        </div>
+        <a asp-action="IncidentDetails" asp-route-id="@Model.IncidentId" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i> Back to Incident
+        </a>
+    </div>
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i><span>@TempData["Error"]</span></div>
+    }
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success"><i class="fa-solid fa-check-circle"></i><span>@TempData["Success"]</span></div>
+    }
+
+    <div class="grid grid-2-1">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Tender Proposal</div>
+                    <div class="card-subtitle">Submit a structured quotation with line-item breakdown</div>
+                </div>
+            </div>
+
+            <form asp-action="SubmitTender" method="post" id="tenderForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IncidentId" value="@Model.IncidentId" />
+                <input type="hidden" name="ContractorId" value="00000000-0000-0000-0000-000000000000" />
+                <input type="hidden" name="QuotedTotalAmount" id="quotedTotal" value="0" />
+
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label" for="proposalText">Proposal</label>
+                        <textarea id="proposalText" name="ProposalText" class="form-control-light" rows="6" required placeholder="Describe your technical approach, materials, workforce, and delivery plan..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="estimatedTimelineDays">Estimated Timeline (days)</label>
+                        <input id="estimatedTimelineDays" name="EstimatedTimelineDays" type="number" min="1" class="form-control-light" required placeholder="5" />
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+                        <div>
+                            <div class="card-title">Quotation Line Items</div>
+                            <div class="card-subtitle">Line items must sum exactly to the quoted total</div>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addLineItem()">
+                            <i class="fa-solid fa-plus"></i> Add Item
+                        </button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="table" id="lineItemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Qty</th>
+                                    <th>Unit</th>
+                                    <th>Unit Price</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="lineItemsBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info mt-2" style="justify-content:space-between;align-items:center">
+                        <span><i class="fa-solid fa-calculator"></i> Quoted Total</span>
+                        <strong id="quotedTotalDisplay">M0.00</strong>
+                    </div>
+                </div>
+
+                <div class="card-footer" style="display:flex;justify-content:flex-end;gap:.65rem;flex-wrap:wrap">
+                    <a asp-action="IncidentDetails" asp-route-id="@Model.IncidentId" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-paper-plane"></i> Submit Tender
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Incident Summary</div>
+                    <div class="card-subtitle">Bid context</div>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (incident is not null)
+                {
+                    <h3 style="font-size:1rem;margin-bottom:.4rem">@incident.Title</h3>
+                    <p class="text-sm text-muted" style="margin-bottom:1rem">@incident.Description</p>
+                    <div style="display:grid;gap:.75rem">
+                        <div><span class="text-sm text-muted">Incident #</span><br /><strong>@incident.IncidentNumber</strong></div>
+                        <div><span class="text-sm text-muted">Location</span><br /><strong>@incident.LocationName</strong></div>
+                        <div><span class="text-sm text-muted">Published</span><br /><strong>@(incident.PublishedAt?.ToString("dd MMM yyyy") ?? "—")</strong></div>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>Incident unavailable</h4></div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        let lineIndex = 0;
+
+        function money(value) {
+            return `M${Number(value || 0).toLocaleString('en-LS', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function addLineItem() {
+            const tbody = document.getElementById('lineItemsBody');
+            const idx = lineIndex++;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <select name="LineItems[${idx}].Category" class="form-select-light category" required>
+                        <option value="1">Labor</option>
+                        <option value="2">Materials</option>
+                        <option value="3">Equipment</option>
+                        <option value="4">Transport</option>
+                        <option value="5">Other</option>
+                    </select>
+                </td>
+                <td><input name="LineItems[${idx}].Description" class="form-control-light" required placeholder="PVC pipe 100mm x 6m" /></td>
+                <td><input name="LineItems[${idx}].Quantity" type="number" step="0.01" min="0.01" class="form-control-light quantity" required value="1" /></td>
+                <td><input name="LineItems[${idx}].UnitOfMeasure" class="form-control-light" required placeholder="unit" value="unit" /></td>
+                <td><input name="LineItems[${idx}].UnitPrice" type="number" step="0.01" min="0" class="form-control-light unit-price" required value="0" /></td>
+                <td>
+                    <input name="LineItems[${idx}].LineTotal" type="hidden" class="line-total-input" value="0" />
+                    <strong class="line-total-display">M0.00</strong>
+                </td>
+                <td><button type="button" class="btn btn-danger btn-sm" onclick="removeLineItem(this)"><i class="fa-solid fa-trash"></i></button></td>`;
+            tbody.appendChild(row);
+            bindRow(row);
+            recalc();
+        }
+
+        function bindRow(row) {
+            row.querySelectorAll('.quantity,.unit-price').forEach(input => input.addEventListener('input', recalc));
+        }
+
+        function removeLineItem(button) {
+            button.closest('tr')?.remove();
+            recalc();
+        }
+
+        function recalc() {
+            let total = 0;
+            document.querySelectorAll('#lineItemsBody tr').forEach(row => {
+                const qty = parseFloat(row.querySelector('.quantity')?.value || '0');
+                const price = parseFloat(row.querySelector('.unit-price')?.value || '0');
+                const line = Math.round((qty * price + Number.EPSILON) * 100) / 100;
+                row.querySelector('.line-total-input').value = line.toFixed(2);
+                row.querySelector('.line-total-display').textContent = money(line);
+                total += line;
+            });
+            total = Math.round((total + Number.EPSILON) * 100) / 100;
+            document.getElementById('quotedTotal').value = total.toFixed(2);
+            document.getElementById('quotedTotalDisplay').textContent = money(total);
+        }
+
+        document.getElementById('tenderForm')?.addEventListener('submit', e => {
+            recalc();
+            const rows = document.querySelectorAll('#lineItemsBody tr');
+            const proposal = document.getElementById('proposalText').value.trim();
+            const timeline = parseInt(document.getElementById('estimatedTimelineDays').value || '0');
+            const total = parseFloat(document.getElementById('quotedTotal').value || '0');
+
+            if (!proposal || timeline <= 0 || rows.length === 0 || total <= 0) {
+                e.preventDefault();
+                showToast('Complete proposal, timeline, and at least one valid line item.', 'warning');
+            }
+        });
+
+        addLineItem();
+    </script>
+}

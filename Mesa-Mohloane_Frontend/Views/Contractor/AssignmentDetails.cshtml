@@ -1,0 +1,328 @@
+@model Mesa_Mohloane_Frontend.Dtos.AssignmentDto
+
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "Assignment Details";
+    ViewData["ActiveNav"] = "MyAssignments";
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Assignment Details</h1>
+            <div class="page-breadcrumb">
+                <a asp-controller="Contractor" asp-action="Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <a asp-controller="Contractor" asp-action="MyAssignments">My Assignments</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Details</span>
+            </div>
+        </div>
+
+        <a asp-controller="Contractor" asp-action="MyAssignments" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-check-circle"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <div class="grid grid-4 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="fa-solid fa-briefcase"></i></div>
+            <div>
+                <div class="stat-value">@StatusText(Model.Status)</div>
+                <div class="stat-label">Current Status</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fa-solid fa-calendar-check"></i></div>
+            <div>
+                <div class="stat-value">@Model.AssignedAt.ToString("dd MMM")</div>
+                <div class="stat-label">Assigned Date</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon teal"><i class="fa-solid fa-play"></i></div>
+            <div>
+                <div class="stat-value">@(Model.StartedAt?.ToString("dd MMM") ?? "—")</div>
+                <div class="stat-label">Started Date</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+            <div>
+                <div class="stat-value">@(Model.CompletedAt?.ToString("dd MMM") ?? "—")</div>
+                <div class="stat-label">Completed Date</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Assignment Information</div>
+                    <div class="card-subtitle">Tender award and incident execution reference</div>
+                </div>
+
+                @AssignmentStatusBadge(Model.Status)
+            </div>
+
+            <div class="card-body">
+                <div style="display:grid;gap:1rem">
+                    <div>
+                        <div class="text-sm text-muted">Assignment ID</div>
+                        <div style="font-family:var(--font-mono);font-size:.8rem">@Model.Id</div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm text-muted">Incident ID</div>
+                        <div style="font-family:var(--font-mono);font-size:.8rem">@Model.IncidentId</div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm text-muted">Tender Application ID</div>
+                        <div style="font-family:var(--font-mono);font-size:.8rem">@Model.TenderApplicationId</div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm text-muted">Assigned By Admin</div>
+                        <div style="font-family:var(--font-mono);font-size:.8rem">@Model.AssignedByAdminId</div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm text-muted">Citizen Acknowledged At</div>
+                        <div>@(Model.CitizenAcknowledgedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                    </div>
+
+                    <div>
+                        <div class="text-sm text-muted">Admin Approved At</div>
+                        <div>@(Model.AdminApprovedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Workflow Actions</div>
+                    <div class="card-subtitle">Only valid actions for the current status are shown</div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                @if (Model.Status == 1)
+                {
+                    <div class="alert alert-info">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>This job has been assigned to you. Start work when ready.</span>
+                    </div>
+
+                    <form asp-controller="Contractor"
+                          asp-action="MarkInProgress"
+                          method="post"
+                          onsubmit="return confirm('Start work on this assignment?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-play"></i>
+                            Mark In Progress
+                        </button>
+                    </form>
+                }
+                else if (Model.Status == 2)
+                {
+                    <div class="alert alert-warning">
+                        <i class="fa-solid fa-person-digging"></i>
+                        <span>Work is currently in progress. Submit the completion report with photographic evidence once finished.</span>
+                    </div>
+
+                    <form asp-controller="Contractor"
+                          asp-action="MarkCompleted"
+                          method="post"
+                          enctype="multipart/form-data"
+                          id="completion-form">
+                        @Html.AntiForgeryToken()
+
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <div class="form-group">
+                            <label class="form-label">Completion Summary</label>
+                            <textarea name="completionSummary"
+                              class="form-control-light"
+                              rows="5"
+                              required
+                              maxlength="1500"
+                              placeholder="Example: Pipe replaced with 100mm PVC. Road surface restored. Site cleaned and tested."></textarea>
+                            <div class="text-sm text-muted mt-1">
+                                Briefly describe the completed work, materials used, and final site condition.
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Completion Evidence Photo</label>
+
+                            <div style="border:1px dashed var(--border);border-radius:var(--radius-lg);padding:1rem;background:var(--surface-2)">
+                                <input type="file"
+                                       name="completionEvidenceFile"
+                                       id="completionEvidenceFile"
+                                       class="form-control-light"
+                                       accept="image/png,image/jpeg,image/jpg,image/webp"
+                                       required />
+
+                                <div class="text-sm text-muted mt-1">
+                                    Upload a clear photo showing the completed work. Accepted formats: JPG, PNG, WEBP.
+                                </div>
+
+                                <div id="evidence-preview-wrap" style="display:none;margin-top:1rem">
+                                    <div class="text-sm text-muted mb-1">Preview</div>
+                                    <img id="evidence-preview"
+                                         alt="Completion evidence preview"
+                                         style="width:100%;max-height:260px;object-fit:cover;border-radius:var(--radius);border:1px solid var(--border)" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submit-completion-btn">
+                            <i class="fa-solid fa-flag-checkered"></i>
+                            Submit Completion
+                        </button>
+                    </form>
+                }
+                else if (Model.Status is 3 or 4)
+                {
+                    <div class="alert alert-success">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>Completion has been submitted. Awaiting citizen acknowledgement or admin approval.</span>
+                    </div>
+                }
+                else if (Model.Status >= 5)
+                {
+                    <div class="alert alert-success">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>This assignment has been approved. You may submit the final invoice.</span>
+                    </div>
+
+                    <a asp-controller="Contractor"
+                       asp-action="SubmitInvoice"
+                       asp-route-assignmentId="@Model.Id"
+                       class="btn btn-primary">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                        Submit Invoice
+                    </a>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fa-solid fa-lock"></i>
+                        <h4>No actions available</h4>
+                        <p>No contractor action is currently available for this assignment status.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        const evidenceInput = document.getElementById('completionEvidenceFile');
+        const previewWrap = document.getElementById('evidence-preview-wrap');
+        const preview = document.getElementById('evidence-preview');
+        const form = document.getElementById('completion-form');
+        const submitBtn = document.getElementById('submit-completion-btn');
+
+        evidenceInput?.addEventListener('change', () => {
+            const file = evidenceInput.files?.[0];
+
+            if (!file) {
+                previewWrap.style.display = 'none';
+                preview.removeAttribute('src');
+                return;
+            }
+
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            const maxSizeMb = 5;
+            const maxSizeBytes = maxSizeMb * 1024 * 1024;
+
+            if (!allowedTypes.includes(file.type)) {
+                evidenceInput.value = '';
+                previewWrap.style.display = 'none';
+                preview.removeAttribute('src');
+                showToast?.('Please upload a JPG, PNG, or WEBP image.', 'error');
+                return;
+            }
+
+            if (file.size > maxSizeBytes) {
+                evidenceInput.value = '';
+                previewWrap.style.display = 'none';
+                preview.removeAttribute('src');
+                showToast?.(`Image must be smaller than ${maxSizeMb}MB.`, 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = e => {
+                preview.src = e.target.result;
+                previewWrap.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        form?.addEventListener('submit', () => {
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            }
+        });
+    </script>
+}
+
+@functions {
+    private static string StatusText(int status) => status switch
+    {
+        1 => "Assigned",
+        2 => "Started",
+        3 => "Completed",
+        4 => "Awaiting",
+        5 => "Approved",
+        6 => "Closed",
+        _ => status.ToString()
+    };
+
+    private static Microsoft.AspNetCore.Html.IHtmlContent AssignmentStatusBadge(int status)
+    {
+        var html = status switch
+        {
+            1 => "<span class=\"badge badge-purple badge-dot\">Assigned</span>",
+            2 => "<span class=\"badge badge-info badge-dot\">Started</span>",
+            3 => "<span class=\"badge badge-success badge-dot\">Completed</span>",
+            4 => "<span class=\"badge badge-warning badge-dot\">Awaiting Approval</span>",
+            5 => "<span class=\"badge badge-primary badge-dot\">Approved</span>",
+            6 => "<span class=\"badge badge-gray badge-dot\">Closed</span>",
+            _ => $"<span class=\"badge badge-gray\">{status}</span>"
+        };
+
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+}

@@ -1,0 +1,38 @@
+@model Mesa_Mohloane_Frontend.Dtos.IncidentDetailDto
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "Incident Details";
+    ViewData["ActiveNav"] = "OpenIncidents";
+    var isOpen = Model.Status == 3;
+}
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap"><div><h1 class="page-title">Incident @Model.IncidentNumber</h1><div class="page-breadcrumb"><a href="/Contractor/OpenIncidents">Open Incidents</a><i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i><span>Details</span></div></div><div style="display:flex;gap:.5rem;flex-wrap:wrap"><a href="/Contractor/OpenIncidents" class="btn btn-secondary btn-sm"><i class="fa-solid fa-arrow-left"></i> Back</a>@if (isOpen) {
+    <a href="/Contractor/SubmitTender?incidentId=@Model.Id" class="btn btn-primary btn-sm"><i class="fa-solid fa-file-signature"></i> Submit Tender</a>
+}
+</div></div>
+<div class="grid grid-2-1">
+    <div style="display:flex;flex-direction:column;gap:1.2rem">
+        <div class="card"><div class="card-header"><div><div class="card-title">@Model.Title</div><div class="card-subtitle">@Model.LocationName</div></div>@Html.Raw(StatusBadge(Model.Status))</div><div class="card-body"><p style="color:var(--text-secondary);white-space:pre-wrap">@Model.Description</p><div class="grid grid-2 mt-3"><div><div class="text-sm text-muted">Latitude</div><div class="fw-600">@Model.Latitude</div></div><div><div class="text-sm text-muted">Longitude</div><div class="fw-600">@Model.Longitude</div></div><div><div class="text-sm text-muted">Reported</div><div class="fw-600">@Model.ReportedAt.ToString("dd MMM yyyy")</div></div><div><div class="text-sm text-muted">Published</div><div class="fw-600">@(Model.PublishedAt?.ToString("dd MMM yyyy") ?? "—")</div></div></div></div><div class="card-footer">@if (isOpen) {
+        <a href="/Contractor/SubmitTender?incidentId=@Model.Id" class="btn btn-primary"><i class="fa-solid fa-file-signature"></i> Prepare Digital Tender</a>
+                } else
+        {
+
+            <span class="text-sm text-muted">Tender submission is only available for published incidents.</span>
+        }
+</div></div>
+        <div class="card"><div class="card-header"><div><div class="card-title">Incident Photos</div><div class="card-subtitle">Visual evidence for quotation planning</div></div></div><div class="card-body">@if (Model.Photos?.Any() == true) {
+        <div class="grid grid-3">@foreach (var photo in Model.Photos) {
+        <a href="@photo.ImageUrl" target="_blank" rel="noopener" class="card" style="overflow:hidden;text-decoration:none"><img src="@photo.ImageUrl" alt="Incident photo" style="width:100%;height:160px;object-fit:cover;display:block" /></a>
+                }
+</div>
+                } else
+        {
+
+            <div class="empty-state"><i class="fa-solid fa-image"></i><h4>No photos available</h4><p>Use the written description and location for tender planning.</p></div>
+        }
+</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1.2rem"><div class="card"><div class="card-header"><div><div class="card-title">Tender Decision</div><div class="card-subtitle">Before submitting your bid</div></div></div><div class="card-body"><div class="alert alert-info" style="margin:0"><i class="fa-solid fa-circle-info"></i><span>Prepare a structured line-item quotation for materials, labour, transport, and other costs.</span></div><div class="alert alert-warning" style="margin-top:1rem"><i class="fa-solid fa-ranking-star"></i><span>Your bid will be evaluated by cost, rating, and past performance.</span></div></div></div><div class="card"><div class="card-header"><div><div class="card-title">Location</div><div class="card-subtitle">Open external map</div></div></div><div class="card-body"><a class="btn btn-secondary" target="_blank" rel="noopener" href="https://www.google.com/maps?q=@Model.Latitude,@Model.Longitude"><i class="fa-solid fa-map-location-dot"></i> Open in Google Maps</a></div></div></div>
+</div>
+}
+@functions { private static string StatusBadge(int status) => status switch { 3 => "<span class=\"badge badge-primary badge-dot\">Published</span>", 4 => "<span class=\"badge badge-purple badge-dot\">Assigned</span>", 5 => "<span class=\"badge badge-info badge-dot\">In Progress</span>", 6 => "<span class=\"badge badge-success badge-dot\">Completed</span>", _ => $"<span class=\"badge badge-gray\">{status}</span>" }; }

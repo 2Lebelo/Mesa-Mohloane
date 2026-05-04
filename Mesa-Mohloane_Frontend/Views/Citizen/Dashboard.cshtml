@@ -1,0 +1,91 @@
+@model Mesa_Mohloane_Frontend.ViewModels.CitizenDashboardViewModel
+@{
+    Layout = "~/Views/Shared/_CitizenShell.cshtml";
+    ViewData["Title"] = "Citizen Dashboard";
+    ViewData["ActiveNav"] = "Dashboard";
+
+    string StatusBadge(int status) => status switch
+    {
+        0 => "<span class=\"badge badge-warning\">Pending</span>",
+        1 => "<span class=\"badge badge-info\">Reported</span>",
+        2 => "<span class=\"badge badge-primary\">Verified</span>",
+        3 => "<span class=\"badge badge-primary\">Published</span>",
+        4 => "<span class=\"badge badge-info\">Assigned</span>",
+        5 => "<span class=\"badge badge-info\">In Progress</span>",
+        6 => "<span class=\"badge badge-success\">Completed</span>",
+        7 => "<span class=\"badge badge-gray\">Closed</span>",
+        8 => "<span class=\"badge badge-danger\">Rejected</span>",
+        _ => $"<span class=\"badge badge-gray\">{status}</span>"
+    };
+}
+<div class="page-header">
+    <h1 class="page-title">Citizen Dashboard</h1>
+    <div class="page-breadcrumb"><a href="#">Home</a><i class="fa-solid fa-chevron-right"></i><span>Overview</span></div>
+</div>
+<div class='grid grid-4 mb-3'>
+    <div class='stat-card'>
+        <div class='stat-icon blue'>
+            <i class='fa-solid fa-triangle-exclamation'></i>
+        </div>
+        <div>
+            <div class='stat-value'>@Model.TotalIncidents</div>
+            <div class='stat-label'>Reported Incidents</div>
+        </div>
+    </div>
+    <div class='stat-card'>
+        <div class='stat-icon amber'><i class='fa-solid fa-clock'></i></div>
+        <div>
+            <div class='stat-value'>@(Model.MyIncidents?.Items.Count(i => i.Status is 0 or 1) ?? 0)</div>
+            <div class='stat-label'>Pending Review</div>
+        </div>
+    </div>
+    <div class='stat-card'>
+        <div class='stat-icon green'><i class='fa-solid fa-bullhorn'></i></div>
+        <div>
+            <div class='stat-value'>@(Model.MyIncidents?.Items.Count(i => i.Status is 2 or 3 or 4 or 5) ?? 0)</div>
+            <div class='stat-label'>Active Incidents</div>
+        </div>
+    </div>
+    <div class='stat-card'>
+        <div class='stat-icon purple'><i class='fa-solid fa-star'></i></div>
+        <div>
+            <div class='stat-value'>@Model.CompletedJobsCount</div>
+            <div class='stat-label'>Completed Jobs</div>
+        </div>
+    </div>
+</div>
+<div class='card'>
+    <div class='card-header'>
+        <div>
+            <div class='card-title'>Recent Incidents</div>
+            <div class='card-subtitle'>Your latest infrastructure reports</div>
+        </div>
+        <a class='btn btn-primary btn-sm' href='/Citizen/ReportIncident'>Report Incident</a>
+    </div>
+    <div class='table-wrap'>
+        <table class='table'>
+            <thead>
+                <tr><th>#</th><th>Title</th><th>Location</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+            @if (Model.MyIncidents?.Items?.Any() == true)
+            {
+                foreach (var incident in Model.MyIncidents.Items)
+                {
+                    <tr>
+                        <td>@incident.IncidentNumber</td>
+                        <td>@incident.Title</td>
+                        <td>@incident.LocationName</td>
+                        <td>@Html.Raw(StatusBadge(incident.Status))</td>
+                        <td><a class='btn btn-secondary btn-sm' href='/Citizen/IncidentDetails?id=@incident.Id'>View</a></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="5"><div class="empty-state">No incidents yet</div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,20 @@
+@{
+    Layout = "~/Views/Shared/_RoleShellBase.cshtml";
+    ViewData["Role"] = "Citizen";
+}
+
+@section Content {
+    @RenderBody()
+
+    @if (IsSectionDefined("Content"))
+    {
+        @await RenderSectionAsync("Content", required: false)
+    }
+}
+
+@section Scripts {
+    @if (IsSectionDefined("Scripts"))
+    {
+        @await RenderSectionAsync("Scripts", required: false)
+    }
+}

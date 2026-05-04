@@ -1,0 +1,264 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.InvoiceListDto>
+
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    ViewData["Title"] = "Invoices";
+    ViewData["ActiveNav"] = "Invoices";
+
+    var items = Model?.Items ?? Array.Empty<Mesa_Mohloane_Frontend.Dtos.InvoiceListDto>();
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var totalCount = Model?.TotalCount ?? 0;
+    var selectedStatus = ViewData["Status"] as int?;
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Invoices</h1>
+            <div class="page-breadcrumb">
+                <a asp-controller="Admin" asp-action="Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Invoices</span>
+            </div>
+        </div>
+
+        <a asp-controller="Admin"
+           asp-action="Invoices"
+           class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-rotate-right"></i>
+            Refresh
+        </a>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <div class="grid grid-4 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+            <div>
+                <div class="stat-value">@totalCount</div>
+                <div class="stat-label">Total Invoices</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon amber"><i class="fa-solid fa-flag"></i></div>
+            <div>
+                <div class="stat-value">@items.Count(x => x.Status == 4)</div>
+                <div class="stat-label">Flagged On Page</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+            <div>
+                <div class="stat-value">@items.Count(x => x.Status == 3)</div>
+                <div class="stat-label">Approved On Page</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="fa-solid fa-coins"></i></div>
+            <div>
+                <div class="stat-value">M@items.Sum(x => x.FinalInvoiceAmount).ToString("N0")</div>
+                <div class="stat-label">Value On Page</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Invoice Filters</div>
+                <div class="card-subtitle">Filter invoices by review status</div>
+            </div>
+        </div>
+
+        <div class="card-body" style="display:flex;gap:.65rem;flex-wrap:wrap">
+            <a asp-controller="Admin"
+               asp-action="Invoices"
+               class="btn btn-sm @(selectedStatus is null ? "btn-primary" : "btn-secondary")">
+                All
+            </a>
+
+            <a asp-controller="Admin"
+               asp-action="Invoices"
+               asp-route-status="1"
+               class="btn btn-sm @(selectedStatus == 1 ? "btn-primary" : "btn-secondary")">
+                Submitted
+            </a>
+
+            <a asp-controller="Admin"
+               asp-action="Invoices"
+               asp-route-status="4"
+               class="btn btn-sm @(selectedStatus == 4 ? "btn-primary" : "btn-secondary")">
+                Flagged
+            </a>
+
+            <a asp-controller="Admin"
+               asp-action="Invoices"
+               asp-route-status="2"
+               class="btn btn-sm @(selectedStatus == 2 ? "btn-primary" : "btn-secondary")">
+                Validated
+            </a>
+
+            <a asp-controller="Admin"
+               asp-action="Invoices"
+               asp-route-status="3"
+               class="btn btn-sm @(selectedStatus == 3 ? "btn-primary" : "btn-secondary")">
+                Approved
+            </a>
+
+            <a asp-controller="Admin"
+               asp-action="Invoices"
+               asp-route-status="6"
+               class="btn btn-sm @(selectedStatus == 6 ? "btn-primary" : "btn-secondary")">
+                Rejected
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Invoice Review</div>
+                <div class="card-subtitle">Validate, approve, or reject contractor invoices</div>
+            </div>
+
+            <span class="badge badge-gray">@totalCount records</span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Invoice #</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                        <th class="actions">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (items.Any())
+                    {
+                        foreach (var invoice in items)
+                        {
+                            <tr>
+                                <td style="font-family:var(--font-mono);font-size:.78rem;font-weight:600;color:var(--accent)">
+                                    @invoice.InvoiceNumber
+                                </td>
+
+                                <td>M@invoice.FinalInvoiceAmount.ToString("N2")</td>
+
+                                <td>@Html.Raw(InvoiceStatusBadge(invoice.Status))</td>
+
+                                <td class="text-sm text-muted">
+                                    @invoice.SubmittedAt.ToString("dd MMM yyyy")
+                                </td>
+
+                                <td class="actions">
+                                    <a asp-controller="Admin"
+                                       asp-action="InvoiceDetails"
+                                       asp-route-id="@invoice.Id"
+                                       class="btn btn-secondary btn-sm">
+                                        <i class="fa-solid fa-eye"></i>
+                                        Review
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                                    <h4>No invoices found</h4>
+                                    <p>Submitted contractor invoices will appear here.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="pagination">
+                <div class="pagination-info">
+                    Page @currentPage of @totalPages — @totalCount records
+                </div>
+
+                <div class="pagination-nav">
+                    @if (currentPage > 1)
+                    {
+                        <a asp-controller="Admin"
+                           asp-action="Invoices"
+                           asp-route-page="@(currentPage - 1)"
+                           asp-route-status="@selectedStatus"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                    }
+
+                    <span class="page-btn active">@currentPage</span>
+
+                    @if (currentPage < totalPages)
+                    {
+                        <a asp-controller="Admin"
+                           asp-action="Invoices"
+                           asp-route-page="@(currentPage + 1)"
+                           asp-route-status="@selectedStatus"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@functions {
+    private static string InvoiceStatusBadge(int status) => status switch
+    {
+        1 => "<span class=\"badge badge-info badge-dot\">Submitted</span>",
+        2 => "<span class=\"badge badge-blue badge-dot\">Validated</span>",
+        3 => "<span class=\"badge badge-success badge-dot\">Approved</span>",
+        4 => "<span class=\"badge badge-warning badge-dot\">Flagged</span>",
+        5 => "<span class=\"badge badge-primary badge-dot\">Disbursed</span>",
+        6 => "<span class=\"badge badge-danger badge-dot\">Rejected</span>",
+        _ => $"<span class=\"badge badge-gray\">{status}</span>"
+    };
+}

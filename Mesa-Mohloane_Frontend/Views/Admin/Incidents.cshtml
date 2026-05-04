@@ -1,0 +1,45 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.IncidentListItemDto>
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    var selectedStatus = ViewData["Status"] as int?;
+    var search = ViewData["Search"] as string;
+    ViewData["Title"] = selectedStatus == 0 ? "Pending Review" : "All Incidents";
+    ViewData["ActiveNav"] = selectedStatus == 0 ? "Pending" : "Incidents";
+}
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap"><div><h1 class="page-title">@(selectedStatus == 0 ? "Pending Review" : "All Incidents")</h1><div class="page-breadcrumb"><a href="/Admin/Dashboard">Home</a><i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i><span>Incidents</span></div></div></div>
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i><span>@TempData["Success"]</span></div>
+    }
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i><span>@TempData["Error"]</span></div>
+    }
+    <div class="card mb-3"><div class="card-body"><form method="get" asp-action="Incidents" asp-controller="Admin" style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:end"><div class="form-group" style="margin:0;min-width:220px;flex:1"><label class="form-label">Search</label><input class="form-control-light" name="search" value="@search" placeholder="Search title or location..." /></div><div class="form-group" style="margin:0;min-width:190px"><label class="form-label">Status</label><select class="form-select-light" name="status"><option value="">All statuses</option><option value="0" selected="@(selectedStatus == 0)">Pending</option><option value="1" selected="@(selectedStatus == 1)">Reported</option><option value="2" selected="@(selectedStatus == 2)">Verified</option><option value="3" selected="@(selectedStatus == 3)">Published</option><option value="4" selected="@(selectedStatus == 4)">Assigned</option><option value="5" selected="@(selectedStatus == 5)">In Progress</option><option value="6" selected="@(selectedStatus == 6)">Completed</option><option value="7" selected="@(selectedStatus == 7)">Closed</option><option value="8" selected="@(selectedStatus == 8)">Rejected</option></select></div><button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> Filter</button><a href="/Admin/Incidents" class="btn btn-secondary">Reset</a></form></div></div>
+    <div class="card">
+        <div class="card-header"><div><div class="card-title">Incident Register</div><div class="card-subtitle">Verify, reject, and publish citizen reports</div></div><span class="badge badge-gray">@(Model?.TotalCount ?? 0) records</span></div><div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Incident #</th><th>Title</th><th>Location</th><th>Status</th><th>Reported</th><th class="actions">Actions</th></tr></thead>
+                <tbody>
+                    @if (Model?.Items?.Any() == true)
+                    {
+                        foreach (var incident in Model.Items)
+                        {
+                            <tr><td><span style="font-family:var(--font-mono);font-size:.78rem;color:var(--accent);font-weight:600">@incident.IncidentNumber</span></td><td class="fw-600">@incident.Title</td><td class="text-sm text-muted">@incident.LocationName</td><td>@Html.Raw(StatusBadge(incident.Status))</td><td class="text-sm text-muted">@incident.ReportedAt.ToString("dd MMM yyyy")</td><td class="actions"><a href="/Admin/IncidentDetails?id=@incident.Id" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye"></i> Review</a></td></tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-triangle-exclamation"></i><h4>No incidents found</h4><p>No citizen reports match the current filter.</p></div></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model is not null && Model.TotalPages > 1)
+        {
+            <div class="pagination"><div class="pagination-info">Page @Model.Page of @Model.TotalPages • @Model.TotalCount records</div><div class="pagination-nav"><a class="page-btn" href="/Admin/Incidents?page=@Math.Max(1, Model.Page - 1)&status=@selectedStatus&search=@search"><i class="fa-solid fa-chevron-left"></i></a><a class="page-btn" href="/Admin/Incidents?page=@Math.Min(Model.TotalPages, Model.Page + 1)&status=@selectedStatus&search=@search"><i class="fa-solid fa-chevron-right"></i></a></div></div>
+        }
+    </div>
+}
+@functions { private static string StatusBadge(int status) => status switch { 0 => "<span class=\"badge badge-warning badge-dot\">Pending</span>", 1 => "<span class=\"badge badge-info badge-dot\">Reported</span>", 2 => "<span class=\"badge badge-blue badge-dot\">Verified</span>", 3 => "<span class=\"badge badge-primary badge-dot\">Published</span>", 4 => "<span class=\"badge badge-purple badge-dot\">Assigned</span>", 5 => "<span class=\"badge badge-info badge-dot\">In Progress</span>", 6 => "<span class=\"badge badge-success badge-dot\">Completed</span>", 7 => "<span class=\"badge badge-gray badge-dot\">Closed</span>", 8 => "<span class=\"badge badge-danger badge-dot\">Rejected</span>", _ => $"<span class=\"badge badge-gray\">{status}</span>" }; }

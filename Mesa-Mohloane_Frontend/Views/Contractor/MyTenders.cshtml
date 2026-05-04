@@ -1,0 +1,243 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.TenderApplicationListDto>
+
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "My Tenders";
+    ViewData["ActiveNav"] = "MyTenders";
+
+    var items = Model?.Items ?? Array.Empty<Mesa_Mohloane_Frontend.Dtos.TenderApplicationListDto>();
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var totalCount = Model?.TotalCount ?? 0;
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">My Tenders</h1>
+            <div class="page-breadcrumb">
+                <a href="/Contractor/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>My Tenders</span>
+            </div>
+        </div>
+
+        <a asp-controller="Contractor"
+           asp-action="OpenIncidents"
+           class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus"></i>
+            Find Open Incidents
+        </a>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-check-circle"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <div class="grid grid-3 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-file-contract"></i>
+            </div>
+            <div>
+                <div class="stat-value">@totalCount</div>
+                <div class="stat-label">Submitted Tenders</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fa-solid fa-ranking-star"></i>
+            </div>
+            <div>
+                <div class="stat-value">@items.Count(x => x.RankPosition > 0)</div>
+                <div class="stat-label">Evaluated On Page</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+            <div>
+                <div class="stat-value">M@items.Sum(x => x.QuotedTotalAmount).ToString("N0")</div>
+                <div class="stat-label">Quoted On Page</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Tender Register</div>
+                <div class="card-subtitle">Track your submitted digital tenders and evaluation results</div>
+            </div>
+
+            <div class="text-sm text-muted">
+                Page @currentPage of @totalPages
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Incident</th>
+                        <th>Quote</th>
+                        <th>Status</th>
+                        <th>Weighted Score</th>
+                        <th>Rank</th>
+                        <th class="actions">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (items.Any())
+                    {
+                        foreach (var tender in items)
+                        {
+                            <tr>
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @tender.IncidentId
+                                </td>
+
+                                <td>
+                                    M@tender.QuotedTotalAmount.ToString("N2")
+                                </td>
+
+                                <td>
+                                    @switch (tender.Status)
+                                    {
+                                        case 1:
+                                            <span class="badge badge-info badge-dot">Submitted</span>
+                                            break;
+                                        case 2:
+                                            <span class="badge badge-blue badge-dot">Under Review</span>
+                                            break;
+                                        case 3:
+                                            <span class="badge badge-success badge-dot">Approved</span>
+                                            break;
+                                        case 4:
+                                            <span class="badge badge-danger badge-dot">Rejected</span>
+                                            break;
+                                        case 5:
+                                            <span class="badge badge-gray badge-dot">Withdrawn</span>
+                                            break;
+                                        default:
+                                            <span class="badge badge-gray">@tender.Status</span>
+                                            break;
+                                    }
+                                </td>
+
+                                <td>
+                                    @tender.WeightedScore.ToString("0.00")
+                                </td>
+
+                                <td>
+                                    @(tender.RankPosition <= 0 ? "—" : tender.RankPosition.ToString())
+                                </td>
+
+                                <td class="actions">
+                                    <div style="display:flex;gap:.45rem;justify-content:flex-end;flex-wrap:wrap">
+                                        <a asp-controller="Contractor"
+                                           asp-action="TenderDetails"
+                                           asp-route-id="@tender.Id"
+                                           class="btn btn-secondary btn-sm">
+                                            <i class="fa-solid fa-eye"></i>
+                                            View
+                                        </a>
+
+                                        @if (tender.Status == 1)
+                                        {
+                                            <form asp-controller="Contractor"
+                                                  asp-action="WithdrawTender"
+                                                  method="post"
+                                                  onsubmit="return confirm('Withdraw this tender?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@tender.Id" />
+
+                                                <button type="submit" class="btn btn-danger btn-sm">
+                                                    <i class="fa-solid fa-ban"></i>
+                                                    Withdraw
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-file-contract"></i>
+                                    <h4>No tenders submitted</h4>
+                                    <p>Open published incidents and submit your first structured bid.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="pagination">
+                <div class="pagination-info">
+                    Page @currentPage of @totalPages — @totalCount records
+                </div>
+
+                <div class="pagination-nav">
+                    @if (currentPage > 1)
+                    {
+                        <a asp-controller="Contractor"
+                           asp-action="MyTenders"
+                           asp-route-page="@(currentPage - 1)"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                    }
+
+                    <span class="page-btn active">@currentPage</span>
+
+                    @if (currentPage < totalPages)
+                    {
+                        <a asp-controller="Contractor"
+                           asp-action="MyTenders"
+                           asp-route-page="@(currentPage + 1)"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

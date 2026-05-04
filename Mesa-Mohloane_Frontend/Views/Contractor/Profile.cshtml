@@ -1,0 +1,137 @@
+@model Mesa_Mohloane_Frontend.Dtos.ContractorProfileDto?
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "Company Profile";
+    ViewData["ActiveNav"] = "Profile";
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Company Profile</h1>
+            <div class="page-breadcrumb">
+                <a href="/Contractor/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Profile</span>
+            </div>
+        </div>
+        @if (Model is null)
+        {
+            <a href="/Contractor/CreateProfile" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Create Profile</a>
+        }
+        else
+        {
+            <a href="/Contractor/EditProfile" class="btn btn-secondary btn-sm"><i class="fa-solid fa-pen"></i> Edit Profile</a>
+        }
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success"><i class="fa-solid fa-check-circle"></i><span>@TempData["Success"]</span></div>
+    }
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i><span>@TempData["Error"]</span></div>
+    }
+
+    @if (Model is null)
+    {
+        <div class="card">
+            <div class="empty-state">
+                <i class="fa-solid fa-building-circle-exclamation"></i>
+                <h4>No company profile yet</h4>
+                <p>Create your company profile before bidding for published incidents.</p>
+                <a href="/Contractor/CreateProfile" class="btn btn-primary mt-2"><i class="fa-solid fa-plus"></i> Create Company Profile</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fa-solid fa-star"></i></div>
+                <div>
+                    <div class="stat-value">@Model.AverageRating.ToString("0.0")</div>
+                    <div class="stat-label">Average Rating</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                <div>
+                    <div class="stat-value">@Model.CompletedJobsCount</div>
+                    <div class="stat-label">Completed Jobs</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon amber"><i class="fa-solid fa-clock"></i></div>
+                <div>
+                    <div class="stat-value">@Model.LateCompletionCount</div>
+                    <div class="stat-label">Late Completions</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Company Information</div>
+                        <div class="card-subtitle">Details used during tender evaluation</div>
+                    </div>
+                    @if (Model.IsApproved)
+                    {
+                        <span class="badge badge-success badge-dot">Approved</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-warning badge-dot">Awaiting Approval</span>
+                    }
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">Company Name</label>
+                        <div class="fw-600">@Model.CompanyName</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Registration Number</label>
+                        <div style="font-family:var(--font-mono)">@Model.RegistrationNumber</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tax Number</label>
+                        <div style="font-family:var(--font-mono)">@(string.IsNullOrWhiteSpace(Model.TaxNumber) ? "—" : Model.TaxNumber)</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Coverage Area</label>
+                        <div>@Model.CoverageArea</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Tender Readiness</div>
+                        <div class="card-subtitle">Profile status controls bidding access</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.IsApproved)
+                    {
+                        <div class="alert alert-success">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>Your company profile is approved. You can submit tenders for published incidents.</span>
+                        </div>
+                        <a href="/Contractor/OpenIncidents" class="btn btn-primary"><i class="fa-solid fa-file-contract"></i> View Open Incidents</a>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>Your profile is pending admin approval. You can view incidents, but tender submission should be blocked until approval.</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}

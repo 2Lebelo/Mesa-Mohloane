@@ -1,0 +1,7 @@
+@{
+    Layout = "~/Views/Shared/_InspectorShell.cshtml";
+    ViewData["Title"] = "Inspector Dashboard";
+    ViewData["ActiveNav"] = "Dashboard";
+}
+<div class="page-header"><h1 class="page-title">Inspector Dashboard</h1><div class="page-breadcrumb"><a href="#">Home</a><i class="fa-solid fa-chevron-right"></i><span>CRUMB</span></div></div><div class='grid grid-4 mb-3'><div class='stat-card'><div class='stat-icon blue'><i class='fa-solid fa-shield-halved'></i></div><div><div class='stat-value'>Live</div><div class='stat-label'>Audit Logs</div></div></div><div class='stat-card'><div class='stat-icon red'><i class='fa-solid fa-flag'></i></div><div><div class='stat-value'>Review</div><div class='stat-label'>Flagged Invoices</div></div></div></div><div class='card'><div class='card-body'><a class='btn btn-primary' href='/Inspector/AuditLogs'>Audit Logs</a> <a class='btn btn-danger' href='/Inspector/FlaggedInvoices'>Flagged Invoices</a></div></div>
+@section Scripts {<script></script>}
