@@ -46,7 +46,7 @@ builder.Services.AddAuthorization();
 // CORS 
 builder.Services.AddCors(opt =>
     opt.AddPolicy("Mesa-Mohloane_Frontend", policy =>
-        policy.WithOrigins("https://localhost:7001")
+        policy.WithOrigins("https://localhost:7076")
               .AllowAnyHeader()
               .AllowAnyMethod()));
 
@@ -78,6 +78,7 @@ builder.Services.AddScoped<IContractorProfileService, ContractorProfileService>(
 builder.Services.AddScoped<INotificationService, NotificationService>();
 //builder.Services.AddScoped<IContractorProfileService, ContractorProfileService>();
 builder.Services.AddScoped<IContractorRatingService, ContractorRatingService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 // Cloudinary
 builder.Services.Configure<CloudinarySettings>(
@@ -107,7 +108,8 @@ using (var scope = app.Services.CreateScope())
         new { Name = "Administrator", Description = "Full system access — manages users, assignments and approvals" },
         new { Name = "Contractor",    Description = "Applies for tenders, completes jobs and submits invoices" },
         new { Name = "Citizen",       Description = "Reports infrastructure incidents and rates completed work" },
-        new { Name = "Inspector",     Description = "Audits system activity and monitors fairness and transparency" }
+        new { Name = "Inspector",     Description = "Audits system activity and monitors fairness and transparency" },
+        new { Name = "Auditor",       Description = "Reviews flagged invoices and audit-sensitive approvals" }
     };
 
     foreach (var r in rolesToSeed)

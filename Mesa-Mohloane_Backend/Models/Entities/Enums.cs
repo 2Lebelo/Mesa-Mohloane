@@ -67,7 +67,15 @@ public enum NotificationType
     WorkCompleted = 5,
     InvoiceSubmitted = 6,
     InvoiceApproved = 7,
-    PaymentStatusChanged = 8
+    PaymentStatusChanged = 8,
+    IncidentRejected = 9,
+    IncidentPublished = 10,
+    TenderEvaluated = 11,
+    ContractorAssigned = 12,
+    JobStatusChanged = 13,
+    InvoiceFlagged = 14,
+    InvoiceRejected = 15,
+    ContractorRated = 16
 }
 
 public enum AuditActionType

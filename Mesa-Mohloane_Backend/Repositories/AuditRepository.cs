@@ -127,6 +127,32 @@ public class AuditRepository : IAuditRepository
             performedBy: performedBy,
             details: details);
 
+    public async Task<IEnumerable<AuditLog>> GetAllAsync(int page, int pageSize)
+    {
+        using var db = Create();
+
+        return await db.QueryAsync<AuditLog, User, AuditLog>(@"
+            SELECT
+                a.*,
+                u.Id, u.FirstName, u.LastName, u.Email
+            FROM AuditLogs a
+            LEFT JOIN Users u ON a.ActorUserId = u.Id
+            WHERE a.IsDeleted = 0
+            ORDER BY a.ActionAt DESC
+            OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY",
+            (log, user) =>
+            {
+                log.ActorUser = user;
+                return log;
+            },
+            new
+            {
+                Offset = (page - 1) * pageSize,
+                PageSize = pageSize
+            },
+            splitOn: "Id");
+    }
+
     public async Task<IEnumerable<AuditLog>> GetRecentAsync(int count = 50)
     {
         using var db = Create();

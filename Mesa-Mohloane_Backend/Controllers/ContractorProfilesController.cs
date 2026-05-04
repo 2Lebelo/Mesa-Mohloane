@@ -13,6 +13,7 @@ namespace Mesa_Mohloane_Backend.Controllers;
 public class ContractorProfilesController(IContractorProfileService profiles) : ControllerBase
 {
     private readonly IContractorProfileService _profiles = profiles;
+
     private Guid CurrentUserId =>
         Guid.Parse(User.FindFirstValue(AppClaimTypes.UserId)!);
 
@@ -23,7 +24,9 @@ public class ContractorProfilesController(IContractorProfileService profiles) : 
     {
         // Force the UserId to come from the JWT — never trust the body
         var dtoWithCorrectUser = dto with { UserId = CurrentUserId };
+
         var result = await _profiles.CreateAsync(dtoWithCorrectUser);
+
         return result.Success
             ? CreatedAtAction(nameof(GetMine), result.Data)
             : BadRequest(new { error = result.Error });
@@ -35,7 +38,10 @@ public class ContractorProfilesController(IContractorProfileService profiles) : 
     public async Task<IActionResult> Update(Guid id, [FromBody] ContractorProfileUpdateDto dto)
     {
         var result = await _profiles.UpdateAsync(id, dto, CurrentUserId);
-        return result.Success ? Ok(result.Data) : BadRequest(new { error = result.Error });
+
+        return result.Success
+            ? Ok(result.Data)
+            : BadRequest(new { error = result.Error });
     }
 
     // Admin: approve a contractor profile
@@ -44,7 +50,10 @@ public class ContractorProfilesController(IContractorProfileService profiles) : 
     public async Task<IActionResult> Approve(Guid id)
     {
         var result = await _profiles.ApproveAsync(id, CurrentUserId);
-        return result.Success ? Ok(result.Data) : BadRequest(new { error = result.Error });
+
+        return result.Success
+            ? Ok(result.Data)
+            : BadRequest(new { error = result.Error });
     }
 
     // Contractor: view own profile
@@ -53,7 +62,10 @@ public class ContractorProfilesController(IContractorProfileService profiles) : 
     public async Task<IActionResult> GetMine()
     {
         var result = await _profiles.GetByUserIdAsync(CurrentUserId);
-        return result.Success ? Ok(result.Data) : NotFound(new { error = result.Error });
+
+        return result.Success
+            ? Ok(result.Data)
+            : NotFound(new { error = result.Error });
     }
 
     // Admin / Inspector: view any profile by id
@@ -62,16 +74,32 @@ public class ContractorProfilesController(IContractorProfileService profiles) : 
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _profiles.GetByIdAsync(id);
-        return result.Success ? Ok(result.Data) : NotFound(new { error = result.Error });
+
+        return result.Success
+            ? Ok(result.Data)
+            : NotFound(new { error = result.Error });
     }
 
-    // Public to authenticated users — contractors need to see each other's profiles
+    // Contractor/Admin/Inspector: approved public contractor directory
     [HttpGet]
     [Authorize(Roles = "Administrator,Inspector,Contractor")]
     public async Task<IActionResult> GetAllApproved(
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
         var result = await _profiles.GetAllApprovedAsync(page, pageSize);
+        return Ok(result);
+    }
+
+    // Admin/Inspector: management view of all contractor profiles, including pending
+    [HttpGet("all")]
+    [Authorize(Roles = "Administrator,Inspector")]
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] bool? isApproved = null)
+    {
+        var result = await _profiles.GetAllAsync(page, pageSize, isApproved);
         return Ok(result);
     }
 }

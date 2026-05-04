@@ -18,6 +18,7 @@ public interface IAuditRepository
         string performedBy, Guid? userId, string? details = null);
 
     // Query methods
+    Task<IEnumerable<AuditLog>> GetAllAsync(int page, int pageSize);
     Task<IEnumerable<AuditLog>> GetRecentAsync(int count = 50);
     Task<IEnumerable<AuditLog>> GetByUserAsync(Guid userId, int page, int pageSize);
     Task<IEnumerable<AuditLog>> GetByEntityAsync(string entityName, Guid entityId, int page, int pageSize);

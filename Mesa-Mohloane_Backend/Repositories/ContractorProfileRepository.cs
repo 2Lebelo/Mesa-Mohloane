@@ -35,6 +35,37 @@ public class ContractorProfileRepository : IContractorProfileRepository
         => await _context.ContractorProfiles
             .CountAsync(p => p.IsApproved && !p.IsDeleted);
 
+    public async Task<IEnumerable<ContractorProfile>> GetAllAsync(
+        int page,
+        int pageSize,
+        bool? isApproved = null)
+    {
+        var query = _context.ContractorProfiles
+            .Include(p => p.User)
+            .Where(p => !p.IsDeleted);
+
+        if (isApproved.HasValue)
+            query = query.Where(p => p.IsApproved == isApproved.Value);
+
+        return await query
+            .OrderBy(p => p.IsApproved)
+            .ThenBy(p => p.CompanyName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetTotalCountAsync(bool? isApproved = null)
+    {
+        var query = _context.ContractorProfiles
+            .Where(p => !p.IsDeleted);
+
+        if (isApproved.HasValue)
+            query = query.Where(p => p.IsApproved == isApproved.Value);
+
+        return await query.CountAsync();
+    }
+
     public async Task<Guid> CreateAsync(ContractorProfile profile)
     {
         _context.ContractorProfiles.Add(profile);

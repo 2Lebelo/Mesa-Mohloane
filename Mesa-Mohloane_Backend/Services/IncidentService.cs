@@ -14,15 +14,21 @@ public class IncidentService : IIncidentService
     private readonly IIncidentRepository _incidentRepo;
     private readonly IAuditRepository _audit;
     private readonly CloudinaryService _cloudinary;
+    private readonly INotificationService _notifications;
+    private readonly IUserRepository _users;
 
     public IncidentService(
         IIncidentRepository incidentRepo,
         IAuditRepository audit,
-        CloudinaryService cloudinary)
+        CloudinaryService cloudinary,
+        INotificationService notifications,
+        IUserRepository users)
     {
         _incidentRepo = incidentRepo;
         _audit = audit;
         _cloudinary = cloudinary;
+        _notifications = notifications;
+        _users = users;
     }
 
     public async Task<ServiceResult<IncidentDto>> CreateAsync(
@@ -66,6 +72,20 @@ public class IncidentService : IIncidentService
             entityId: incidentId,
             actorUserId: citizenId,
             notes: $"Incident: {incidentNumber}");
+
+        await _notifications.SendAsync(
+            citizenId,
+            NotificationType.IncidentSubmitted,
+            "Incident submitted",
+            $"Your incident {incidentNumber} has been submitted for review.",
+            "Incident",
+            incidentId);
+
+        await NotifyAdministratorsAsync(
+            NotificationType.IncidentSubmitted,
+            "New incident submitted",
+            $"Incident {incidentNumber} reported at {incident.LocationName}.",
+            incidentId);
 
         return await GetByIdAsync(incidentId);
     }
@@ -264,6 +284,23 @@ public class IncidentService : IIncidentService
         };
     }
 
+    public async Task<PagedResultDto<IncidentListDto>> GetPublishedAsync(
+        int page,
+        int pageSize,
+        string? search)
+    {
+        var items = await _incidentRepo.GetAllAsync(page, pageSize, IncidentStatus.Published, search);
+        var total = await _incidentRepo.GetTotalCountAsync(IncidentStatus.Published, search);
+
+        return new PagedResultDto<IncidentListDto>
+        {
+            Items = items.Select(MapToListDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
     private static IncidentDto MapToDto(Incident i) => new(
         Id: i.Id,
         IncidentNumber: i.IncidentNumber,
@@ -316,6 +353,45 @@ public class IncidentService : IIncidentService
             incidentId.ToString(), adminId.ToString(),
             $"Incident {incident.IncidentNumber} verified by admin");
 
+        await _notifications.SendAsync(
+            incident.CitizenId,
+            NotificationType.IncidentVerified,
+            "Incident verified",
+            $"Your incident {incident.IncidentNumber} has been verified.",
+            "Incident",
+            incidentId);
+
+        return await GetByIdAsync(incidentId);
+    }
+
+    public async Task<ServiceResult<IncidentDto>> RejectAsync(
+        Guid incidentId, Guid adminId, string reason)
+    {
+        var incident = await _incidentRepo.GetByIdAsync(incidentId);
+        if (incident is null)
+            return ServiceResult<IncidentDto>.Fail("Incident not found.");
+
+        if (incident.Status != IncidentStatus.Pending && incident.Status != IncidentStatus.Reported)
+            return ServiceResult<IncidentDto>.Fail("Only Pending or Reported incidents can be rejected.");
+
+        incident.Status = IncidentStatus.Rejected;
+        incident.VerifiedAt = DateTime.UtcNow;
+        incident.VerifiedByAdminId = adminId;
+        incident.UpdatedAt = DateTime.UtcNow;
+
+        await _incidentRepo.UpdateAsync(incident);
+        await _audit.LogAsync("IncidentRejected", "Incident",
+            incidentId.ToString(), adminId.ToString(),
+            $"Incident {incident.IncidentNumber} rejected: {reason}");
+
+        await _notifications.SendAsync(
+            incident.CitizenId,
+            NotificationType.IncidentRejected,
+            "Incident rejected",
+            $"Your incident {incident.IncidentNumber} was rejected. Reason: {reason}",
+            "Incident",
+            incidentId);
+
         return await GetByIdAsync(incidentId);
     }
 
@@ -338,6 +414,58 @@ public class IncidentService : IIncidentService
             incidentId.ToString(), adminId.ToString(),
             $"Incident {incident.IncidentNumber} published for contractor bidding");
 
+        await _notifications.SendAsync(
+            incident.CitizenId,
+            NotificationType.IncidentPublished,
+            "Incident published",
+            $"Your incident {incident.IncidentNumber} has been published for contractor bidding.",
+            "Incident",
+            incidentId);
+
+        await NotifyContractorsAsync(
+            NotificationType.IncidentPublished,
+            "New incident open for bidding",
+            $"Incident {incident.IncidentNumber} is now open for bidding at {incident.LocationName}.",
+            incidentId);
+
         return await GetByIdAsync(incidentId);
+    }
+
+    private async Task NotifyAdministratorsAsync(
+        NotificationType type,
+        string title,
+        string message,
+        Guid incidentId)
+    {
+        var admins = await _users.GetAdministratorsAsync(1, 200, null);
+        foreach (var admin in admins)
+        {
+            await _notifications.SendAsync(
+                admin.Id,
+                type,
+                title,
+                message,
+                "Incident",
+                incidentId);
+        }
+    }
+
+    private async Task NotifyContractorsAsync(
+        NotificationType type,
+        string title,
+        string message,
+        Guid incidentId)
+    {
+        var contractors = await _users.GetContractorsAsync(1, 500, null);
+        foreach (var contractor in contractors)
+        {
+            await _notifications.SendAsync(
+                contractor.Id,
+                type,
+                title,
+                message,
+                "Incident",
+                incidentId);
+        }
     }
 }

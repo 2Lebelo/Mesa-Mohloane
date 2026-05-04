@@ -12,17 +12,23 @@ public class TenderService : ITenderService
     private readonly IContractorProfileRepository _profileRepo;
     private readonly IIncidentRepository _incidentRepo;
     private readonly IAuditRepository _audit;
+    private readonly INotificationService _notifications;
+    private readonly IUserRepository _users;
 
     public TenderService(
         ITenderApplicationRepository tenderRepo,
         IContractorProfileRepository profileRepo,
         IIncidentRepository incidentRepo,
-        IAuditRepository audit)
+        IAuditRepository audit,
+        INotificationService notifications,
+        IUserRepository users)
     {
         _tenderRepo = tenderRepo;
         _profileRepo = profileRepo;
         _incidentRepo = incidentRepo;
         _audit = audit;
+        _notifications = notifications;
+        _users = users;
     }
 
     // ── Submit tender (Contractor) ────────────────────────────────────────────
@@ -80,6 +86,20 @@ public class TenderService : ITenderService
         await _audit.LogAsync("TenderSubmitted", "TenderApplication",
             id.ToString(), contractorId.ToString(),
             $"Incident: {incident.IncidentNumber}, Amount: {dto.QuotedTotalAmount:C}");
+
+        await NotifyAdministratorsAsync(
+            NotificationType.TenderSubmitted,
+            "Tender submitted",
+            $"A tender was submitted for incident {incident.IncidentNumber}.",
+            id);
+
+        await _notifications.SendAsync(
+            incident.CitizenId,
+            NotificationType.TenderSubmitted,
+            "Tender received",
+            $"A contractor has submitted a tender for incident {incident.IncidentNumber}.",
+            "TenderApplication",
+            id);
 
         return await GetByIdAsync(id);
     }
@@ -202,6 +222,14 @@ public class TenderService : ITenderService
             incidentId.ToString(), adminId.ToString(),
             $"{ranked.Count} tenders evaluated and ranked");
 
+        await _notifications.SendAsync(
+            incident.CitizenId,
+            NotificationType.TenderEvaluated,
+            "Tenders evaluated",
+            $"Tenders for incident {incident.IncidentNumber} have been evaluated.",
+            "Incident",
+            incidentId);
+
         var dtos = ranked.Select(MapToDto).ToList();
         return ServiceResult<IReadOnlyList<TenderApplicationDto>>.Ok(dtos);
     }
@@ -290,4 +318,23 @@ public class TenderService : ITenderService
         QuotedTotalAmount: t.QuotedTotalAmount,
         WeightedScore: t.WeightedScore,
         RankPosition: t.RankPosition);
+
+    private async Task NotifyAdministratorsAsync(
+        NotificationType type,
+        string title,
+        string message,
+        Guid tenderId)
+    {
+        var admins = await _users.GetAdministratorsAsync(1, 200, null);
+        foreach (var admin in admins)
+        {
+            await _notifications.SendAsync(
+                admin.Id,
+                type,
+                title,
+                message,
+                "TenderApplication",
+                tenderId);
+        }
+    }
 }

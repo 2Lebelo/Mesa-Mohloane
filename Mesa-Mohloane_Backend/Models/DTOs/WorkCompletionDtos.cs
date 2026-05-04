@@ -12,3 +12,9 @@ public record WorkCompletionDto(
 public record WorkCompletionCreateDto(
     string CompletionSummary,
     string? CompletionEvidenceUrl);
+
+public class WorkCompletionFormDto
+{
+    public string CompletionSummary { get; set; } = string.Empty;
+    public IFormFile? CompletionEvidenceFile { get; set; }
+}

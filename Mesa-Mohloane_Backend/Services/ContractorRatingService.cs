@@ -85,7 +85,7 @@ public class ContractorRatingService : IContractorRatingService
         // Notify the contractor they received a rating
         await _notifications.SendAsync(
             userId: dto.ContractorId,
-            type: NotificationType.WorkCompleted,
+            type: NotificationType.ContractorRated,
             title: $"You received a {dto.Stars}-star rating",
             message: dto.Comment is not null
                 ? $"A citizen rated your work {dto.Stars}/5: \"{dto.Comment}\""

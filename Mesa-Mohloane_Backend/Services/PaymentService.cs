@@ -3,6 +3,7 @@ using Mesa_Mohloane_Backend.Models.DTOs;
 using Mesa_Mohloane_Backend.Models.Entities;
 using Mesa_Mohloane_Backend.Repositories.Interfaces;
 using Mesa_Mohloane_Backend.Services.Interfaces;
+using Mesa_Mohloane_Backend.Data;
 
 namespace Mesa_Mohloane_Backend.Services;
 
@@ -13,19 +14,22 @@ public class PaymentService : IPaymentService
     private readonly IAssignmentRepository _assignmentRepo;
     private readonly IIncidentRepository _incidentRepo;
     private readonly IAuditRepository _audit;
+    private readonly MesaMohloaneDbContext _db;
 
     public PaymentService(
         IPaymentRepository paymentRepo,
         IInvoiceRepository invoiceRepo,
         IAssignmentRepository assignmentRepo,
         IIncidentRepository incidentRepo,
-        IAuditRepository audit)
+        IAuditRepository audit,
+        MesaMohloaneDbContext db)
     {
         _paymentRepo = paymentRepo;
         _invoiceRepo = invoiceRepo;
         _assignmentRepo = assignmentRepo;
         _incidentRepo = incidentRepo;
         _audit = audit;
+        _db = db;
     }
 
     // ── Admin: initiate payment ───────────────────────────────────────────────
@@ -39,6 +43,10 @@ public class PaymentService : IPaymentService
         if (invoice.Status != InvoiceStatus.Approved)
             return ServiceResult<PaymentDto>.Fail(
                 "Payment can only be initiated for an Approved invoice.");
+
+        if (dto.Amount != invoice.FinalInvoiceAmount)
+            return ServiceResult<PaymentDto>.Fail(
+                "Payment amount must match the final invoice amount.");
 
         // Status Guard: citizen must have acknowledged the invoice
         if (!invoice.CitizenAcknowledgedAt.HasValue)
@@ -112,6 +120,8 @@ public class PaymentService : IPaymentService
             return ServiceResult<PaymentDto>.Fail(
                 "Payment must be Approved before disbursement.");
 
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
         payment.Status = PaymentStatus.Disbursed;
         payment.DisbursedAt = DateTime.UtcNow;
         payment.UpdatedAt = DateTime.UtcNow;
@@ -144,6 +154,8 @@ public class PaymentService : IPaymentService
                 }
             }
         }
+
+        await tx.CommitAsync();
 
         await _audit.LogAsync("PaymentDisbursed", "Payment",
             paymentId.ToString(), adminId.ToString(),
