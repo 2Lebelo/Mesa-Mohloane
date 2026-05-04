@@ -50,6 +50,32 @@ public class InvoiceRepository : IInvoiceRepository
             .Take(pageSize)
             .ToListAsync();
 
+    public async Task<IEnumerable<Invoice>> GetAllAsync(
+        int page, int pageSize, InvoiceStatus? status)
+    {
+        var query = _context.Invoices
+            .Include(i => i.Contractor)
+            .Include(i => i.Assignment)
+            .Where(i => !i.IsDeleted);
+
+        if (status.HasValue)
+            query = query.Where(i => i.Status == status.Value);
+
+        return await query
+            .OrderByDescending(i => i.SubmittedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetTotalCountAsync(InvoiceStatus? status)
+    {
+        var query = _context.Invoices.Where(i => !i.IsDeleted);
+        if (status.HasValue)
+            query = query.Where(i => i.Status == status.Value);
+        return await query.CountAsync();
+    }
+
     public async Task<Guid> CreateAsync(Invoice invoice)
     {
         _context.Invoices.Add(invoice);

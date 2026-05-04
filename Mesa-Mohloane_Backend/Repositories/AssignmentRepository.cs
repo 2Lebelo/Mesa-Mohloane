@@ -32,6 +32,48 @@ public class AssignmentRepository : IAssignmentRepository
             .Include(a => a.Incident)
             .FirstOrDefaultAsync(a => a.ContractorId == contractorId && !a.IsDeleted);
 
+    public async Task<IEnumerable<Assignment>> GetByContractorAsync(
+        Guid contractorId, int page, int pageSize)
+        => await _context.Assignments
+            .Include(a => a.Incident)
+            .Include(a => a.TenderApplication)
+            .Where(a => a.ContractorId == contractorId && !a.IsDeleted)
+            .OrderByDescending(a => a.AssignedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+    public async Task<int> GetCountByContractorAsync(Guid contractorId)
+        => await _context.Assignments
+            .CountAsync(a => a.ContractorId == contractorId && !a.IsDeleted);
+
+    public async Task<IEnumerable<Assignment>> GetAllAsync(
+        int page, int pageSize, AssignmentStatus? status)
+    {
+        var query = _context.Assignments
+            .Include(a => a.Incident)
+            .Include(a => a.TenderApplication)
+            .Include(a => a.Contractor)
+            .Where(a => !a.IsDeleted);
+
+        if (status.HasValue)
+            query = query.Where(a => a.Status == status.Value);
+
+        return await query
+            .OrderByDescending(a => a.AssignedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    public async Task<int> GetTotalCountAsync(AssignmentStatus? status)
+    {
+        var query = _context.Assignments.Where(a => !a.IsDeleted);
+        if (status.HasValue)
+            query = query.Where(a => a.Status == status.Value);
+        return await query.CountAsync();
+    }
+
     public async Task<Guid> CreateAsync(Assignment assignment)
     {
         _context.Assignments.Add(assignment);

@@ -87,7 +87,7 @@ public class IncidentsController(IIncidentService incidents) : ControllerBase
 
     // Shared: get a single incident 
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Citizen,Administrator,Inspector")]
+    [Authorize(Roles = "Citizen,Administrator,Inspector,Contractor")]
     public async Task<IActionResult> GetById(Guid id)
     {
         var result = await _incidents.GetByIdAsync(id);
@@ -104,6 +104,18 @@ public class IncidentsController(IIncidentService incidents) : ControllerBase
         [FromQuery] int pageSize = 10)
     {
         var result = await _incidents.GetByCitizenAsync(CurrentUserId, page, pageSize);
+        return Ok(result);
+    }
+
+    // Contractor: view open incidents
+    [HttpGet("open")]
+    [Authorize(Roles = "Contractor")]
+    public async Task<IActionResult> GetOpen(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null)
+    {
+        var result = await _incidents.GetPublishedAsync(page, pageSize, search);
         return Ok(result);
     }
 
@@ -129,6 +141,18 @@ public class IncidentsController(IIncidentService incidents) : ControllerBase
         return result.Success ? Ok(result.Data) : BadRequest(new { error = result.Error });
     }
 
+    // Admin: reject a submitted incident 
+    [HttpPatch("{id:guid}/reject")]
+    [Authorize(Roles = "Administrator")]
+    public async Task<IActionResult> Reject(Guid id, [FromBody] RejectIncidentRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Reason))
+            return BadRequest(new { error = "Rejection reason is required." });
+
+        var result = await _incidents.RejectAsync(id, CurrentUserId, request.Reason);
+        return result.Success ? Ok(result.Data) : BadRequest(new { error = result.Error });
+    }
+
     // Admin: publish verified incident so contractors can bid 
     [HttpPatch("{id:guid}/publish")]
     [Authorize(Roles = "Administrator")]
@@ -138,3 +162,5 @@ public class IncidentsController(IIncidentService incidents) : ControllerBase
         return result.Success ? Ok(result.Data) : BadRequest(new { error = result.Error });
     }
 }
+
+public record RejectIncidentRequest(string Reason);

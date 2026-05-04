@@ -141,6 +141,26 @@ public class ContractorProfileService : IContractorProfileService
         };
     }
 
+    public async Task<PagedResultDto<ContractorProfileDto>> GetAllAsync(
+    int page,
+    int pageSize,
+    bool? isApproved = null)
+    {
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+
+        var items = await _profileRepo.GetAllAsync(page, pageSize, isApproved);
+        var total = await _profileRepo.GetTotalCountAsync(isApproved);
+
+        return new PagedResultDto<ContractorProfileDto>
+        {
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
     private static ContractorProfileDto MapToDto(ContractorProfile p) => new(
         p.Id, p.UserId, p.CompanyName, p.RegistrationNumber, p.TaxNumber,
         p.CoverageArea, p.AverageRating, p.CompletedJobsCount,

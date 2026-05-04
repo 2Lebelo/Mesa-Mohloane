@@ -3,6 +3,8 @@ using Mesa_Mohloane_Backend.Models.DTOs;
 using Mesa_Mohloane_Backend.Models.Entities;
 using Mesa_Mohloane_Backend.Repositories.Interfaces;
 using Mesa_Mohloane_Backend.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using Mesa_Mohloane_Backend.Data;
 
 namespace Mesa_Mohloane_Backend.Services;
 
@@ -13,19 +15,31 @@ public class AssignmentService : IAssignmentService
     private readonly IIncidentRepository _incidentRepo;
     private readonly IContractorProfileRepository _profileRepo;
     private readonly IAuditRepository _audit;
+    private readonly INotificationService _notifications;
+    private readonly IUserRepository _users;
+    private readonly CloudinaryService _cloudinary;
+    private readonly MesaMohloaneDbContext _db;
 
     public AssignmentService(
-        IAssignmentRepository assignmentRepo,
-        ITenderApplicationRepository tenderRepo,
-        IIncidentRepository incidentRepo,
-        IContractorProfileRepository profileRepo,
-        IAuditRepository audit)
+     IAssignmentRepository assignmentRepo,
+     ITenderApplicationRepository tenderRepo,
+     IIncidentRepository incidentRepo,
+     IContractorProfileRepository profileRepo,
+     IAuditRepository audit,
+     INotificationService notifications,
+     IUserRepository users,
+     MesaMohloaneDbContext db,
+     CloudinaryService cloudinary)
     {
         _assignmentRepo = assignmentRepo;
         _tenderRepo = tenderRepo;
         _incidentRepo = incidentRepo;
         _profileRepo = profileRepo;
         _audit = audit;
+        _notifications = notifications;
+        _users = users;
+        _db = db;
+        _cloudinary = cloudinary;
     }
 
     // ── Admin: assign the winning contractor ──────────────────────────────────
@@ -49,6 +63,8 @@ public class AssignmentService : IAssignmentService
             winningTender.Status != TenderStatus.Submitted)
             return ServiceResult<AssignmentDto>.Fail(
                 "Selected tender must be in Submitted or UnderReview status.");
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
 
         // Create the assignment
         var assignment = new Assignment
@@ -88,9 +104,27 @@ public class AssignmentService : IAssignmentService
         incident.UpdatedAt = DateTime.UtcNow;
         await _incidentRepo.UpdateAsync(incident);
 
+        await tx.CommitAsync();
+
         await _audit.LogAsync("ContractorAssigned", "Assignment",
             assignmentId.ToString(), adminId.ToString(),
             $"Contractor {winningTender.ContractorId} assigned to Incident {incident.IncidentNumber}");
+
+        await _notifications.SendAsync(
+            winningTender.ContractorId,
+            NotificationType.ContractorAssigned,
+            "You have been assigned",
+            $"You have been assigned to incident {incident.IncidentNumber}.",
+            "Assignment",
+            assignmentId);
+
+        await _notifications.SendAsync(
+            incident.CitizenId,
+            NotificationType.ContractorAssigned,
+            "Contractor assigned",
+            $"A contractor has been assigned to your incident {incident.IncidentNumber}.",
+            "Assignment",
+            assignmentId);
 
         return await GetByIdAsync(assignmentId);
     }
@@ -123,6 +157,14 @@ public class AssignmentService : IAssignmentService
             incident.Status = IncidentStatus.InProgress;
             incident.UpdatedAt = DateTime.UtcNow;
             await _incidentRepo.UpdateAsync(incident);
+
+            await _notifications.SendAsync(
+                incident.CitizenId,
+                NotificationType.JobStatusChanged,
+                "Work started",
+                $"Work has started on incident {incident.IncidentNumber}.",
+                "Assignment",
+                assignmentId);
         }
 
         await _audit.LogAsync("WorkStarted", "Assignment",
@@ -134,9 +176,64 @@ public class AssignmentService : IAssignmentService
 
     // ── Contractor: submit work completion ────────────────────────────────────
     public async Task<ServiceResult<WorkCompletionDto>> SubmitWorkCompletionAsync(
-        Guid assignmentId, Guid contractorId, WorkCompletionCreateDto dto)
+    Guid assignmentId,
+    Guid contractorId,
+    WorkCompletionCreateDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.CompletionSummary))
+            return ServiceResult<WorkCompletionDto>.Fail("Completion summary is required.");
+
+        return await SubmitWorkCompletionInternalAsync(
+            assignmentId,
+            contractorId,
+            dto.CompletionSummary,
+            dto.CompletionEvidenceUrl?.Trim());
+    }
+
+    public async Task<ServiceResult<WorkCompletionDto>> SubmitWorkCompletionWithEvidenceAsync(
+    Guid assignmentId,
+    Guid contractorId,
+    string completionSummary,
+    IFormFile completionEvidenceFile)
+    {
+        if (string.IsNullOrWhiteSpace(completionSummary))
+            return ServiceResult<WorkCompletionDto>.Fail("Completion summary is required.");
+
+        var validationError = ValidateEvidenceFile(completionEvidenceFile);
+        if (validationError is not null)
+            return ServiceResult<WorkCompletionDto>.Fail(validationError);
+
+        string imageUrl;
+
+        try
+        {
+            var upload = await _cloudinary.UploadAsync(
+                completionEvidenceFile,
+                folder: "mesa-mohloane/work-completions");
+
+            imageUrl = upload.ImageUrl;
+        }
+        catch (Exception ex)
+        {
+            return ServiceResult<WorkCompletionDto>.Fail(
+                $"Failed to upload completion evidence: {ex.Message}");
+        }
+
+        return await SubmitWorkCompletionInternalAsync(
+            assignmentId,
+            contractorId,
+            completionSummary,
+            imageUrl);
+    }
+
+    private async Task<ServiceResult<WorkCompletionDto>> SubmitWorkCompletionInternalAsync(
+    Guid assignmentId,
+    Guid contractorId,
+    string completionSummary,
+    string? completionEvidenceUrl)
     {
         var assignment = await _assignmentRepo.GetByIdAsync(assignmentId);
+
         if (assignment is null)
             return ServiceResult<WorkCompletionDto>.Fail("Assignment not found.");
 
@@ -149,40 +246,122 @@ public class AssignmentService : IAssignmentService
                 "Work must be started before completion can be submitted.");
 
         var existing = await _assignmentRepo.GetWorkCompletionAsync(assignmentId);
+
         if (existing is not null)
             return ServiceResult<WorkCompletionDto>.Fail(
                 "A work completion report has already been submitted for this assignment.");
 
-        var workCompletion = new WorkCompletion
+        var incident = await _incidentRepo.GetByIdAsync(assignment.IncidentId);
+
+        if (incident is null)
+            return ServiceResult<WorkCompletionDto>.Fail(
+                "Linked incident could not be found for this assignment.");
+
+        await using var tx = await _db.Database.BeginTransactionAsync();
+
+        try
         {
-            AssignmentId = assignmentId,
-            CompletionSummary = dto.CompletionSummary.Trim(),
-            CompletionEvidenceUrl = dto.CompletionEvidenceUrl?.Trim(),
-            SubmittedAt = DateTime.UtcNow
-        };
+            var now = DateTime.UtcNow;
 
-        await _assignmentRepo.CreateWorkCompletionAsync(workCompletion);
+            var workCompletion = new WorkCompletion
+            {
+                AssignmentId = assignmentId,
+                CompletionSummary = completionSummary.Trim(),
+                CompletionEvidenceUrl = completionEvidenceUrl?.Trim(),
+                SubmittedAt = now
+            };
 
-        assignment.Status = AssignmentStatus.Completed;
-        assignment.CompletedAt = DateTime.UtcNow;
-        assignment.UpdatedAt = DateTime.UtcNow;
-        await _assignmentRepo.UpdateAsync(assignment);
+            await _assignmentRepo.CreateWorkCompletionAsync(workCompletion);
 
-        await _audit.LogAsync("WorkCompletionSubmitted", "Assignment",
-            assignmentId.ToString(), contractorId.ToString(),
-            "Contractor submitted work completion report");
+            assignment.Status = AssignmentStatus.Completed;
+            assignment.CompletedAt = now;
+            assignment.UpdatedAt = now;
+            await _assignmentRepo.UpdateAsync(assignment);
 
-        return ServiceResult<WorkCompletionDto>.Ok(new WorkCompletionDto(
-            workCompletion.Id,
-            workCompletion.AssignmentId,
-            workCompletion.CompletionSummary,
-            workCompletion.CompletionEvidenceUrl,
-            workCompletion.SubmittedAt,
-            workCompletion.ReviewedAt,
-            workCompletion.ReviewedByAdminId));
+            // Critical fix: keep Incident lifecycle synchronized with Assignment lifecycle.
+            incident.Status = IncidentStatus.Completed;
+            incident.UpdatedAt = now;
+            await _incidentRepo.UpdateAsync(incident);
+
+            await tx.CommitAsync();
+
+            await _notifications.SendAsync(
+                incident.CitizenId,
+                NotificationType.JobStatusChanged,
+                "Work completed",
+                $"The contractor marked incident {incident.IncidentNumber} as completed.",
+                "Assignment",
+                assignmentId);
+
+            await NotifyAdministratorsAsync(
+                NotificationType.JobStatusChanged,
+                "Work completion submitted",
+                $"A work completion report has been submitted for incident {incident.IncidentNumber}.",
+                assignmentId);
+
+            await _audit.LogAsync(
+                "WorkCompletionSubmitted",
+                "Assignment",
+                assignmentId.ToString(),
+                contractorId.ToString(),
+                "Contractor submitted work completion report");
+
+            return ServiceResult<WorkCompletionDto>.Ok(new WorkCompletionDto(
+                workCompletion.Id,
+                workCompletion.AssignmentId,
+                workCompletion.CompletionSummary,
+                workCompletion.CompletionEvidenceUrl,
+                workCompletion.SubmittedAt,
+                workCompletion.ReviewedAt,
+                workCompletion.ReviewedByAdminId));
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+
+            return ServiceResult<WorkCompletionDto>.Fail(
+                $"Failed to submit work completion: {ex.Message}");
+        }
     }
 
-    // ── Citizen: acknowledge work completion ──────────────────────────────────
+    private static string? ValidateEvidenceFile(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+            return "Completion evidence photo is required.";
+
+        const long maxBytes = 5 * 1024 * 1024;
+
+        if (file.Length > maxBytes)
+            return "Completion evidence photo must be 5MB or smaller.";
+
+        var allowedContentTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp"
+    };
+
+        if (!allowedContentTypes.Contains(file.ContentType))
+            return "Only JPG, PNG, and WEBP images are allowed.";
+
+        var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp"
+    };
+
+        var extension = Path.GetExtension(file.FileName);
+
+        if (!allowedExtensions.Contains(extension))
+            return "Invalid image file extension.";
+
+        return null;
+    }
+
+    // Citizen: acknowledge work completion ──────────────────────────────────
     public async Task<ServiceResult<AssignmentDto>> AcknowledgeCompletionAsync(
         Guid assignmentId, Guid citizenId)
     {
@@ -205,6 +384,12 @@ public class AssignmentService : IAssignmentService
         assignment.UpdatedAt = DateTime.UtcNow;
         await _assignmentRepo.UpdateAsync(assignment);
 
+        await NotifyAdministratorsAsync(
+            NotificationType.JobStatusChanged,
+            "Citizen acknowledged work",
+            $"Citizen acknowledged completion for incident {incident.IncidentNumber}.",
+            assignmentId);
+
         await _audit.LogAsync("WorkAcknowledgedByCitizen", "Assignment",
             assignmentId.ToString(), citizenId.ToString(),
             "Citizen acknowledged work completion");
@@ -212,7 +397,7 @@ public class AssignmentService : IAssignmentService
         return await GetByIdAsync(assignmentId);
     }
 
-    // ── Admin: approve completion ─────────────────────────────────────────────
+    // Admin: approve completion 
     public async Task<ServiceResult<AssignmentDto>> ApproveCompletionAsync(
         Guid assignmentId, Guid adminId)
     {
@@ -246,7 +431,23 @@ public class AssignmentService : IAssignmentService
             incident.Status = IncidentStatus.Completed;
             incident.UpdatedAt = DateTime.UtcNow;
             await _incidentRepo.UpdateAsync(incident);
+
+            await _notifications.SendAsync(
+                incident.CitizenId,
+                NotificationType.JobStatusChanged,
+                "Work approved",
+                $"Work for incident {incident.IncidentNumber} has been approved.",
+                "Assignment",
+                assignmentId);
         }
+
+        await _notifications.SendAsync(
+            assignment.ContractorId,
+            NotificationType.JobStatusChanged,
+            "Work approved",
+            "Your work completion has been approved.",
+            "Assignment",
+            assignmentId);
 
         await _audit.LogAsync("CompletionApproved", "Assignment",
             assignmentId.ToString(), adminId.ToString(),
@@ -272,8 +473,57 @@ public class AssignmentService : IAssignmentService
         return ServiceResult<AssignmentDto>.Ok(MapToDto(a));
     }
 
+    public async Task<PagedResultDto<AssignmentDto>> GetByContractorAsync(
+        Guid contractorId, int page, int pageSize)
+    {
+        var items = await _assignmentRepo.GetByContractorAsync(contractorId, page, pageSize);
+        var total = await _assignmentRepo.GetCountByContractorAsync(contractorId);
+
+        return new PagedResultDto<AssignmentDto>
+        {
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
+    public async Task<PagedResultDto<AssignmentDto>> GetAllAsync(
+        int page, int pageSize, AssignmentStatus? status)
+    {
+        var items = await _assignmentRepo.GetAllAsync(page, pageSize, status);
+        var total = await _assignmentRepo.GetTotalCountAsync(status);
+
+        return new PagedResultDto<AssignmentDto>
+        {
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
     private static AssignmentDto MapToDto(Assignment a) => new(
         a.Id, a.IncidentId, a.TenderApplicationId, a.ContractorId,
         a.AssignedByAdminId, a.AssignedAt, a.Status, a.StartedAt,
         a.CompletedAt, a.CitizenAcknowledgedAt, a.AdminApprovedAt);
+
+    private async Task NotifyAdministratorsAsync(
+        NotificationType type,
+        string title,
+        string message,
+        Guid assignmentId)
+    {
+        var admins = await _users.GetAdministratorsAsync(1, 200, null);
+        foreach (var admin in admins)
+        {
+            await _notifications.SendAsync(
+                admin.Id,
+                type,
+                title,
+                message,
+                "Assignment",
+                assignmentId);
+        }
+    }
 }
