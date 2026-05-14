@@ -1,0 +1,137 @@
+﻿@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.NotificationDto>
+
+@{
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var totalCount = Model?.TotalCount ?? 0;
+}
+
+@if (TempData["Success"] is not null)
+{
+    <div class="alert alert-success">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>@TempData["Success"]</span>
+    </div>
+}
+
+@if (TempData["Error"] is not null)
+{
+    <div class="alert alert-danger">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>@TempData["Error"]</span>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <div>
+            <div class="card-title">In-app Notifications</div>
+            <div class="card-subtitle">System updates, workflow alerts, and role-specific messages</div>
+        </div>
+
+        <form asp-controller="@controllerName"
+              asp-action="MarkAllNotificationsRead"
+              method="post">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-secondary btn-sm" type="submit">
+                <i class="fa-solid fa-check-double"></i>
+                Mark all read
+            </button>
+        </form>
+    </div>
+
+    <div class="card-body">
+        @if (Model?.Items?.Any() == true)
+        {
+            foreach (var note in Model.Items)
+            {
+                <div style="display:flex;justify-content:space-between;gap:1rem;padding:1rem 0;border-bottom:1px solid var(--border-light);align-items:flex-start">
+                    <div style="min-width:0">
+                        <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+                            <div class="fw-600">@note.Title</div>
+
+                            @if (!note.IsRead)
+                            {
+                                <span class="badge badge-info badge-dot">Unread</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-gray badge-dot">Read</span>
+                            }
+                        </div>
+
+                        <div class="text-muted text-sm mt-1">
+                            @note.Message
+                        </div>
+
+                        <div class="text-muted text-sm mt-1">
+                            <i class="fa-regular fa-clock"></i>
+                            @note.SentAt.ToString("dd MMM yyyy HH:mm")
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(note.RelatedEntityName) && note.RelatedEntityId.HasValue)
+                        {
+                            <div class="text-muted text-sm mt-1">
+                                Related:
+                                <span style="font-family:var(--font-mono)">
+                                    @note.RelatedEntityName / @note.RelatedEntityId
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!note.IsRead)
+                    {
+                        <form asp-controller="@controllerName"
+                              asp-action="MarkNotificationRead"
+                              method="post"
+                              style="flex-shrink:0">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@note.Id" />
+                            <button class="btn btn-secondary btn-sm" type="submit">
+                                <i class="fa-solid fa-check"></i>
+                                Mark read
+                            </button>
+                        </form>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fa-solid fa-bell"></i>
+                <h4>No notifications</h4>
+                <p>You have no notifications at the moment.</p>
+            </div>
+        }
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <div class="pagination">
+            <div class="pagination-info">
+                Page @currentPage of @totalPages — @totalCount records
+            </div>
+
+            <div class="pagination-nav">
+                <a class="page-btn @(currentPage <= 1 ? "d-none" : "")"
+                   asp-controller="@controllerName"
+                   asp-action="Notifications"
+                   asp-route-page="@(currentPage - 1)">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+
+                <span class="page-btn active">@currentPage</span>
+
+                <a class="page-btn @(currentPage >= totalPages ? "d-none" : "")"
+                   asp-controller="@controllerName"
+                   asp-action="Notifications"
+                   asp-route-page="@(currentPage + 1)">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+    }
+</div>

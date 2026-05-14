@@ -231,18 +231,92 @@ public sealed class CitizenController : BaseController
         return RedirectToAction(nameof(IncidentDetails), new { id = incidentId });
     }
 
+    //[HttpPost]
+    //[ValidateAntiForgeryToken]
+    //public async Task<IActionResult> RateContractor(ContractorRatingCreateDto dto)
+    //{
+    //    if (dto.Stars is < 1 or > 5)
+    //    {
+    //        TempData["Error"] = "Rating must be between 1 and 5 stars.";
+    //        return RedirectToAction(nameof(CompletedJobs));
+    //    }
+    //    var (ok, _, error) = await _ratings.RateAsync(dto);
+    //    TempData[ok ? "Success" : "Error"] = ok ? "Contractor rating submitted successfully." : error ?? "Failed to submit contractor rating.";
+    //    return RedirectToAction(nameof(CompletedJobs));
+    //}
+
+    [HttpGet]
+    public async Task<IActionResult> Ratings(int page = 1)
+    {
+        SetUserViewData();
+        ViewData["Title"] = "Ratings";
+        ViewData["ActiveNav"] = "Ratings";
+
+        var incidents = await _incidents.GetMineAsync(page, 20);
+        var items = new List<CitizenRatingItemViewModel>();
+
+        var closedIncidents = incidents?.Items
+            .Where(i => i.Status == 7)
+            .ToList() ?? new List<IncidentListItemDto>();
+
+        foreach (var incident in closedIncidents)
+        {
+            var assignment = await _assignments.GetByIncidentAsync(incident.Id);
+
+            if (assignment is null)
+                continue;
+
+            var existingRating = await _ratings.GetByAssignmentAsync(assignment.Id);
+
+            items.Add(new CitizenRatingItemViewModel
+            {
+                Incident = incident,
+                Assignment = assignment,
+                ExistingRating = existingRating
+            });
+        }
+
+        return View(new CitizenRatingsViewModel
+        {
+            Items = items
+        });
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RateContractor(ContractorRatingCreateDto dto)
     {
+        if (dto.IncidentId == Guid.Empty)
+        {
+            TempData["Error"] = "Invalid incident id.";
+            return RedirectToAction(nameof(Ratings));
+        }
+
+        if (dto.AssignmentId == Guid.Empty)
+        {
+            TempData["Error"] = "Invalid assignment id.";
+            return RedirectToAction(nameof(Ratings));
+        }
+
+        if (dto.ContractorId == Guid.Empty)
+        {
+            TempData["Error"] = "Invalid contractor id.";
+            return RedirectToAction(nameof(Ratings));
+        }
+
         if (dto.Stars is < 1 or > 5)
         {
             TempData["Error"] = "Rating must be between 1 and 5 stars.";
-            return RedirectToAction(nameof(CompletedJobs));
+            return RedirectToAction(nameof(Ratings));
         }
+
         var (ok, _, error) = await _ratings.RateAsync(dto);
-        TempData[ok ? "Success" : "Error"] = ok ? "Contractor rating submitted successfully." : error ?? "Failed to submit contractor rating.";
-        return RedirectToAction(nameof(CompletedJobs));
+
+        TempData[ok ? "Success" : "Error"] = ok
+            ? "Contractor rating submitted successfully."
+            : error ?? "Failed to submit contractor rating.";
+
+        return RedirectToAction(nameof(Ratings));
     }
 
     [HttpGet]

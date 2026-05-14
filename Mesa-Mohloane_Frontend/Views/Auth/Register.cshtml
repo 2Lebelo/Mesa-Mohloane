@@ -18,19 +18,30 @@
     <style>
         :root {
             --primary: #1473ff;
+            --primary-hover: #005de0;
             --primary-dark: #071a4d;
             --primary-soft: #eaf2ff;
             --text-dark: #071a4d;
             --text-muted: #64748b;
-            --border: #e5e7eb;
+            --border: #d9e2ef;
             --white: #ffffff;
             --danger: #991b1b;
+            --danger-bg: #fef2f2;
+            --danger-border: #fecaca;
+            --radius-sm: 4px;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
         body {
             margin: 0;
+            min-height: 100%;
             font-family: Inter, Arial, sans-serif;
-            background: #f4f7ff;
+            background: var(--white);
+            color: var(--text-dark);
         }
 
         .auth-page {
@@ -41,12 +52,13 @@
         }
 
         .auth-panel {
+            position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            background: var(--white);
             padding: 96px 72px 48px;
             overflow-y: auto;
-            position: relative;
         }
 
         .auth-brand {
@@ -78,13 +90,14 @@
             line-height: 1.1;
             font-weight: 900;
             letter-spacing: -1.5px;
-            margin-bottom: 12px;
+            margin: 0 0 12px;
         }
 
         .auth-sub {
             color: var(--text-muted);
             font-size: 15px;
-            margin-bottom: 30px;
+            margin: 0 0 30px;
+            line-height: 1.6;
         }
 
         .form-grid {
@@ -103,23 +116,30 @@
             font-size: 13px;
             font-weight: 800;
             margin-bottom: 8px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
         }
 
         .form-control {
             width: 100%;
             min-height: 52px;
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             padding: 0 16px;
             font-size: 15px;
             outline: none;
-            transition: 0.2s ease;
-            box-sizing: border-box;
+            transition: border-color .2s ease, box-shadow .2s ease;
+            background: #ffffff;
+            color: var(--text-dark);
         }
+
+            .form-control::placeholder {
+                color: #94a3b8;
+            }
 
             .form-control:focus {
                 border-color: var(--primary);
-                box-shadow: 0 0 0 4px rgba(20, 115, 255, 0.12);
+                box-shadow: 0 0 0 3px rgba(20, 115, 255, 0.12);
             }
 
         .role-options {
@@ -130,21 +150,21 @@
 
         .role-option {
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: var(--radius-sm);
             padding: 16px;
             display: flex;
             gap: 12px;
             align-items: center;
             cursor: pointer;
             background: #fff;
-            transition: .2s ease;
+            transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
         }
 
             .role-option:hover,
             .role-option:has(input:checked) {
                 border-color: var(--primary);
                 background: var(--primary-soft);
-                box-shadow: 0 0 0 4px rgba(20, 115, 255, .10);
+                box-shadow: 0 0 0 3px rgba(20, 115, 255, .10);
             }
 
             .role-option input {
@@ -154,7 +174,7 @@
         .role-icon {
             width: 42px;
             height: 42px;
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             background: var(--primary);
             color: #fff;
             display: inline-flex;
@@ -177,12 +197,38 @@
             line-height: 1.35;
         }
 
+        .password-toggle {
+            position: absolute;
+            right: .85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0;
+        }
+
         .btn-primary {
             background: var(--primary);
             border: none;
             color: var(--white);
             cursor: pointer;
+            transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
         }
+
+            .btn-primary:hover {
+                background: var(--primary-hover);
+                transform: translateY(-1px);
+                box-shadow: 0 10px 24px rgba(20, 115, 255, .22);
+            }
+
+            .btn-primary:disabled {
+                opacity: .55;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
 
         .btn-full {
             width: 100%;
@@ -190,17 +236,14 @@
 
         .btn-lg {
             height: 54px;
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             font-weight: 900;
             font-size: 15px;
         }
 
-        .btn-primary:hover {
-            background: #005de0;
-        }
-
         .auth-visual {
-            background: linear-gradient(rgba(7, 26, 77, 0.88), rgba(7, 26, 77, 0.88)), url('/images/Hero_Image.jpg');
+            min-height: 100vh;
+            background: linear-gradient(rgba(7, 26, 77, 0.88), rgba(7, 26, 77, 0.88)), url('/images/Hero_Image.png');
             background-size: cover;
             background-position: center;
             display: flex;
@@ -208,17 +251,24 @@
             justify-content: center;
             padding: 72px;
             color: var(--white);
+            text-align: center;
         }
 
         .auth-visual-content {
+            width: 100%;
             max-width: 520px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            justify-content: flex-start; 
             text-align: center;
         }
 
         .auth-visual-icon {
             width: 86px;
             height: 86px;
-            border-radius: 24px;
+            border-radius: 18px;
             background: var(--primary);
             display: inline-flex;
             align-items: center;
@@ -233,22 +283,50 @@
 
         .auth-visual h2 {
             font-size: 42px;
+            line-height: 1.18;
             font-weight: 900;
             letter-spacing: -1px;
-            margin-bottom: 14px;
+            margin: 0 0 14px;
+            color: #ffffff;
         }
 
         .auth-visual p {
-            color: #cbd5e1;
+            color: #dbeafe;
             font-size: 16px;
             line-height: 1.7;
+            max-width: 440px;
+            margin: 0 auto;
         }
 
+        .auth-benefits {
+            margin-top: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: .85rem;
+            max-width: 340px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+        }
+
+        .auth-benefit {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            color: #dbeafe;
+            font-size: .9rem;
+        }
+
+            .auth-benefit i {
+                color: var(--primary);
+                width: 16px;
+            }
+
         .alert-danger {
-            border: 1px solid #fecaca;
-            background: #fef2f2;
+            border: 1px solid var(--danger-border);
+            background: var(--danger-bg);
             color: var(--danger);
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             padding: 14px 16px;
             margin-bottom: 20px;
             font-size: 14px;
@@ -270,6 +348,10 @@
             text-decoration: none;
         }
 
+            .auth-link:hover {
+                text-decoration: underline;
+            }
+
         @@media (max-width: 992px) {
             .auth-page {
                 grid-template-columns: 1fr;
@@ -280,11 +362,16 @@
             }
 
             .auth-panel {
+                min-height: 100vh;
                 padding: 120px 28px 48px;
             }
 
             .auth-brand {
                 left: 28px;
+            }
+
+            .auth-card {
+                max-width: 560px;
             }
         }
 
@@ -292,6 +379,9 @@
             .form-grid,
             .role-options {
                 grid-template-columns: 1fr;
+            }
+
+            .form-grid {
                 gap: 0;
             }
 
@@ -440,8 +530,8 @@
 
                             <button type="button"
                                     onclick="togglePw('password','pw-icon')"
-                                    aria-label="Toggle password visibility"
-                                    style="position:absolute;right:.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer">
+                                    class="password-toggle"
+                                    aria-label="Toggle password visibility">
                                 <i class="fa-solid fa-eye" id="pw-icon"></i>
                             </button>
                         </div>
@@ -462,8 +552,8 @@
 
                             <button type="button"
                                     onclick="togglePw('confirm','confirm-icon')"
-                                    aria-label="Toggle confirm password visibility"
-                                    style="position:absolute;right:.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer">
+                                    class="password-toggle"
+                                    aria-label="Toggle confirm password visibility">
                                 <i class="fa-solid fa-eye" id="confirm-icon"></i>
                             </button>
                         </div>
@@ -493,24 +583,24 @@
                     and help improve service delivery across Lesotho.
                 </p>
 
-                <div style="margin-top:2.5rem;display:flex;flex-direction:column;gap:.85rem;max-width:330px;margin-left:auto;margin-right:auto;text-align:left">
-                    <div style="display:flex;align-items:center;gap:.75rem;color:#cbd5e1;font-size:.9rem">
-                        <i class="fa-solid fa-check" style="color:#1473ff;width:16px"></i>
+                <div class="auth-benefits">
+                    <div class="auth-benefit">
+                        <i class="fa-solid fa-check"></i>
                         Citizen incident reporting
                     </div>
 
-                    <div style="display:flex;align-items:center;gap:.75rem;color:#cbd5e1;font-size:.9rem">
-                        <i class="fa-solid fa-check" style="color:#1473ff;width:16px"></i>
+                    <div class="auth-benefit">
+                        <i class="fa-solid fa-check"></i>
                         Contractor tender participation
                     </div>
 
-                    <div style="display:flex;align-items:center;gap:.75rem;color:#cbd5e1;font-size:.9rem">
-                        <i class="fa-solid fa-check" style="color:#1473ff;width:16px"></i>
+                    <div class="auth-benefit">
+                        <i class="fa-solid fa-check"></i>
                         Secure role-based access
                     </div>
 
-                    <div style="display:flex;align-items:center;gap:.75rem;color:#cbd5e1;font-size:.9rem">
-                        <i class="fa-solid fa-check" style="color:#1473ff;width:16px"></i>
+                    <div class="auth-benefit">
+                        <i class="fa-solid fa-check"></i>
                         Smart infrastructure workflow
                     </div>
                 </div>
@@ -525,6 +615,8 @@
         function togglePw(inputId, iconId) {
             const input = document.getElementById(inputId);
             const icon = document.getElementById(iconId);
+
+            if (!input || !icon) return;
 
             const isText = input.type === 'text';
             input.type = isText ? 'password' : 'text';
@@ -558,10 +650,11 @@
                 alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> <span id="error-msg"></span>';
 
                 const form = document.querySelector('form');
-                form.parentElement.insertBefore(alertBox, form);
+                form?.parentElement?.insertBefore(alertBox, form);
             }
 
-            document.getElementById('error-msg').textContent = message;
+            const errorMsg = document.getElementById('error-msg');
+            if (errorMsg) errorMsg.textContent = message;
         }
     </script>
 </body>

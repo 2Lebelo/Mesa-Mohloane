@@ -166,20 +166,49 @@ public sealed class IncidentApiService : ApiClientBase, IIncidentApiService
         }
     }
 
-    private static async Task<(bool Ok, T? Data, string? Error)> ParseResponse<T>(HttpResponseMessage res)
+    //private static async Task<(bool Ok, T? Data, string? Error)> ParseResponse<T>(HttpResponseMessage res)
+    //{
+    //    var json = await res.Content.ReadAsStringAsync();
+    //    if (res.IsSuccessStatusCode)
+    //        return string.IsNullOrWhiteSpace(json) ? (true, default, null) : (true, JsonSerializer.Deserialize<T>(json, JsonOpts), null);
+    //    if (string.IsNullOrWhiteSpace(json)) return (false, default, res.ReasonPhrase);
+    //    try
+    //    {
+    //        var err = JsonSerializer.Deserialize<ApiErrorDto>(json, JsonOpts);
+    //        return (false, default, err?.Error ?? res.ReasonPhrase);
+    //    }
+    //    catch { return (false, default, res.ReasonPhrase); }
+    //}
+    private static async Task<(bool Ok, T? Data, string? Error)> ParseResponse<T>(
+    HttpResponseMessage res)
     {
         var json = await res.Content.ReadAsStringAsync();
+
         if (res.IsSuccessStatusCode)
-            return string.IsNullOrWhiteSpace(json) ? (true, default, null) : (true, JsonSerializer.Deserialize<T>(json, JsonOpts), null);
-        if (string.IsNullOrWhiteSpace(json)) return (false, default, res.ReasonPhrase);
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return (true, default, null);
+
+            return (true, JsonSerializer.Deserialize<T>(json, JsonOpts), null);
+        }
+
+        if (string.IsNullOrWhiteSpace(json))
+            return (false, default, $"{(int)res.StatusCode} {res.ReasonPhrase}");
+
         try
         {
             var err = JsonSerializer.Deserialize<ApiErrorDto>(json, JsonOpts);
-            return (false, default, err?.Error ?? res.ReasonPhrase);
-        }
-        catch { return (false, default, res.ReasonPhrase); }
-    }
 
+            if (!string.IsNullOrWhiteSpace(err?.Error))
+                return (false, default, err.Error);
+
+            return (false, default, json);
+        }
+        catch
+        {
+            return (false, default, json);
+        }
+    }
     private static async Task<string?> ReadError(HttpResponseMessage res)
     {
         try

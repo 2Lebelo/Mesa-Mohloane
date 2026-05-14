@@ -1,10 +1,185 @@
+@model Mesa_Mohloane_Frontend.ViewModels.CitizenRatingsViewModel
+
 @{
     Layout = "~/Views/Shared/_CitizenShell.cshtml";
     ViewData["Title"] = "Ratings";
     ViewData["ActiveNav"] = "Ratings";
 }
-<div class='page-header'><h1 class='page-title'>Ratings</h1><div class='page-breadcrumb'><a href='#'>Home</a><span>List</span></div></div>
-<div class='card'><div class='card-header'><div><div class='card-title'>Ratings</div><div class='card-subtitle'>Mesa-Mohloane records</div></div></div><div class='table-wrap'><table class='table'><thead><tr><th>#</th><th>Title</th><th>Info</th><th>Status</th><th></th></tr></thead><tbody id='rows'></tbody></table></div></div>
-@section Scripts {
-    <script>document.addEventListener('DOMContentLoaded',async()=>{try{const d=await apiFetch('/api/contractor-ratings/my');const items=d.items||d||[];rows.innerHTML=items.length?items.map(x=>'<tr><td>'+escHtml(x.incidentNumber||x.assignmentNumber||x.invoiceNumber||x.id)+'</td><td>'+escHtml(x.title||x.incidentTitle||x.action||'Record')+'</td><td>'+escHtml(x.locationName||x.entityType||x.contractorName||x.proposal||'—')+'</td><td>'+statusBadge(x.status)+'</td><td><a class=\'btn btn-secondary btn-sm\' href=\'DETAIL?id='+x.id+'\'>View</a></td></tr>').join(''):'<tr><td colspan=5><div class=empty-state>No records found</div></td></tr>'}catch(e){showToast(e.message)}})</script>
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Ratings</h1>
+            <div class="page-breadcrumb">
+                <a asp-controller="Citizen" asp-action="Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Ratings</span>
+            </div>
+        </div>
+
+        <a asp-controller="Citizen"
+           asp-action="MyIncidents"
+           class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+            My Incidents
+        </a>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Rate Completed Work</div>
+                <div class="card-subtitle">
+                    You can rate contractors only after payment has been disbursed and the incident is closed.
+                </div>
+            </div>
+
+            <span class="badge badge-gray">
+                @(Model?.Items.Count ?? 0) closed jobs
+            </span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Incident</th>
+                        <th>Title</th>
+                        <th>Assignment</th>
+                        <th>Contractor</th>
+                        <th>Rating</th>
+                        <th class="actions">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (Model?.Items.Any() == true)
+                    {
+                        foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <span style="font-family:var(--font-mono);font-size:.78rem;color:var(--accent);font-weight:600">
+                                        @item.Incident.IncidentNumber
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="fw-600">@item.Incident.Title</div>
+                                    <div class="text-sm text-muted">@item.Incident.LocationName</div>
+                                </td>
+
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @item.Assignment.Id
+                                </td>
+
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @item.Assignment.ContractorId
+                                </td>
+
+                                <td>
+                                    @if (item.ExistingRating is not null)
+                                    {
+                                        <div style="color:var(--warning);font-weight:700">
+                                            @Stars(item.ExistingRating.Stars)
+                                        </div>
+                                        <div class="text-sm text-muted">
+                                            @(string.IsNullOrWhiteSpace(item.ExistingRating.Comment)
+                                                                        ? "No comment"
+                                                                        : item.ExistingRating.Comment)
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-warning badge-dot">Not rated</span>
+                                    }
+                                </td>
+
+                                <td class="actions">
+                                    @if (item.CanRate)
+                                    {
+                                        <form asp-controller="Citizen"
+                                              asp-action="RateContractor"
+                                              method="post"
+                                              style="display:flex;gap:.45rem;align-items:center;justify-content:flex-end;flex-wrap:wrap">
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden" name="IncidentId" value="@item.Incident.Id" />
+                                            <input type="hidden" name="AssignmentId" value="@item.Assignment.Id" />
+                                            <input type="hidden" name="ContractorId" value="@item.Assignment.ContractorId" />
+
+                                            <select name="Stars" class="form-select-light" style="width:110px" required>
+                                                <option value="">Stars</option>
+                                                <option value="5">5 stars</option>
+                                                <option value="4">4 stars</option>
+                                                <option value="3">3 stars</option>
+                                                <option value="2">2 stars</option>
+                                                <option value="1">1 star</option>
+                                            </select>
+
+                                            <input name="Comment"
+                                                   class="form-control-light"
+                                                   placeholder="Optional comment"
+                                                   style="max-width:220px" />
+
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                <i class="fa-solid fa-star"></i>
+                                                Submit
+                                            </button>
+                                        </form>
+                                    }
+                                    else if (item.ExistingRating is not null)
+                                    {
+                                        <span class="badge badge-success badge-dot">Rated</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-gray">Unavailable</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-star"></i>
+                                    <h4>No closed jobs ready for rating</h4>
+                                    <p>
+                                        Ratings become available after the admin disburses payment and the incident is closed.
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@functions {
+    private static string Stars(int stars)
+    {
+        stars = Math.Clamp(stars, 1, 5);
+        return new string('★', stars) + new string('☆', 5 - stars);
+    }
 }

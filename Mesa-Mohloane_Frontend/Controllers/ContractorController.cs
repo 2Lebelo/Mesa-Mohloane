@@ -17,7 +17,8 @@ public sealed class ContractorController : BaseController
     private readonly IInvoiceApiService _invoices;
     private readonly INotificationApiService _notifications;
     private readonly IContractorProfileApiService _profiles;
-    
+    private readonly IRatingApiService _ratings;
+
     public ContractorController(
         IHttpClientFactory http,
         IConfiguration config,
@@ -26,7 +27,8 @@ public sealed class ContractorController : BaseController
         IAssignmentApiService assignments,
         IInvoiceApiService invoices,
         INotificationApiService notifications,
-        IContractorProfileApiService profiles)
+        IContractorProfileApiService profiles,
+        IRatingApiService ratings)
         : base(http, config)
     {
         _incidents = incidents;
@@ -35,6 +37,8 @@ public sealed class ContractorController : BaseController
         _invoices = invoices;
         _notifications = notifications;
         _profiles = profiles;
+        _ratings = ratings;
+
     }
 
     [HttpGet]
@@ -386,22 +390,6 @@ public sealed class ContractorController : BaseController
         return RedirectToAction(nameof(AssignmentDetails), new { id });
     }
 
-    //[HttpGet]
-    //public async Task<IActionResult> SubmitInvoice(Guid assignmentId)
-    //{
-    //    SetUserViewData();
-    //    ViewData["Title"] = "Submit Invoice";
-    //    ViewData["ActiveNav"] = "Invoices";
-
-    //    var assignment = await _assignments.GetByIdAsync(assignmentId);
-    //    if (assignment is null) return NotFound();
-
-    //    return View(new SubmitInvoiceViewModel
-    //    {
-    //        AssignmentId = assignmentId,
-    //        Assignment = assignment
-    //    });
-    //}
     [HttpGet]
     public async Task<IActionResult> SubmitInvoice(Guid assignmentId)
     {
@@ -429,13 +417,22 @@ public sealed class ContractorController : BaseController
 
         var existingInvoice = await _invoices.GetByAssignmentAsync(assignmentId);
 
-        TenderApplicationDto? tender = null;
-        decimal originalQuotedAmount = 0m;
+        //TenderApplicationDto? tender = null;
+        //decimal originalQuotedAmount = 0m;
 
-        tender = await _tenders.GetByIdAsync(assignment.TenderApplicationId);
+        //tender = await _tenders.GetByIdAsync(assignment.TenderApplicationId);
 
-        if (tender is not null)
-            originalQuotedAmount = tender.QuotedTotalAmount;
+        //if (tender is not null)
+        //    originalQuotedAmount = tender.QuotedTotalAmount;
+        var tender = await _tenders.GetByIdAsync(assignment.TenderApplicationId);
+
+        if (tender is null)
+        {
+            TempData["Error"] = "Approved tender details could not be loaded. Please try again.";
+            return RedirectToAction(nameof(AssignmentDetails), new { id = assignmentId });
+        }
+
+        var originalQuotedAmount = tender.QuotedTotalAmount;
 
         return View(new SubmitInvoiceViewModel
         {
@@ -447,64 +444,164 @@ public sealed class ContractorController : BaseController
         });
     }
 
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public async Task<IActionResult> SubmitInvoice(InvoiceCreateDto dto)
-    //{
-    //    dto = dto with { FinalInvoiceAmount = dto.LineItems?.Sum(x => x.LineTotal) ?? dto.FinalInvoiceAmount };
-
-    //    if (dto.AssignmentId == Guid.Empty || dto.TenderApplicationId == Guid.Empty || dto.LineItems is null || dto.LineItems.Count == 0)
-    //    {
-    //        TempData["Error"] = "Complete all invoice details and add at least one line item.";
-    //        return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = dto.AssignmentId });
-    //    }
-
-    //    var (ok, _, error) = await _invoices.SubmitAsync(dto);
-    //    TempData[ok ? "Success" : "Error"] = ok
-    //        ? "Final invoice submitted successfully."
-    //        : error ?? "Failed to submit invoice.";
-
-    //    return ok ? RedirectToAction(nameof(MyInvoices)) : RedirectToAction(nameof(SubmitInvoice), new { assignmentId = dto.AssignmentId });
-    //}
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SubmitInvoice(InvoiceCreateDto dto)
+    public async Task<IActionResult> SubmitInvoice(SubmitInvoiceFormViewModel form)
     {
-        if (dto.AssignmentId == Guid.Empty)
+        if (form.AssignmentId == Guid.Empty)
         {
             TempData["Error"] = "Invalid assignment id.";
             return RedirectToAction(nameof(MyAssignments));
         }
 
-        if (dto.TenderApplicationId == Guid.Empty)
+        var contractorId = CurrentUserId();
+        if (contractorId == Guid.Empty)
+        {
+            TempData["Error"] = "Your session is missing a valid contractor id. Please sign in again.";
+            return RedirectToAction(nameof(MyAssignments));
+        }
+
+        if (form.TenderApplicationId == Guid.Empty)
         {
             TempData["Error"] = "Invalid tender reference.";
-            return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = dto.AssignmentId });
+            return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = form.AssignmentId });
         }
 
-        if (dto.LineItems is null || dto.LineItems.Count == 0)
+        var assignment = await _assignments.GetByIdAsync(form.AssignmentId);
+        if (assignment is null)
+        {
+            TempData["Error"] = "Assignment could not be found.";
+            return RedirectToAction(nameof(MyAssignments));
+        }
+
+        if (assignment.ContractorId != contractorId)
+        {
+            TempData["Error"] = "You are not authorised to submit an invoice for this assignment.";
+            return RedirectToAction(nameof(MyAssignments));
+        }
+
+        if (assignment.Status != 5)
+        {
+            TempData["Error"] = "You can only submit an invoice after the assignment has been approved.";
+            return RedirectToAction(nameof(AssignmentDetails), new { id = form.AssignmentId });
+        }
+
+        if (assignment.TenderApplicationId != form.TenderApplicationId)
+        {
+            TempData["Error"] = "Invoice tender reference does not match this assignment.";
+            return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = form.AssignmentId });
+        }
+
+        var tender = await _tenders.GetByIdAsync(form.TenderApplicationId);
+        if (tender is null)
+        {
+            TempData["Error"] = "Approved tender reference could not be found.";
+            return RedirectToAction(nameof(AssignmentDetails), new { id = form.AssignmentId });
+        }
+
+        if (tender.ContractorId != contractorId)
+        {
+            TempData["Error"] = "The approved tender does not belong to your contractor account.";
+            return RedirectToAction(nameof(MyAssignments));
+        }
+
+        if (form.LineItems is null || form.LineItems.Count == 0)
         {
             TempData["Error"] = "Add at least one invoice line item.";
-            return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = dto.AssignmentId });
+            return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = form.AssignmentId });
         }
 
-        var calculatedTotal = dto.LineItems.Sum(x => x.LineTotal);
+        var validLineItems = form.LineItems
+            .Where(x =>
+                x.Category is >= 1 and <= 5 &&
+                !string.IsNullOrWhiteSpace(x.Description) &&
+                !string.IsNullOrWhiteSpace(x.UnitOfMeasure) &&
+                x.Quantity > 0 &&
+                x.UnitPrice >= 0)
+            .ToList();
 
-        dto = dto with
+        if (validLineItems.Count == 0)
         {
-            FinalInvoiceAmount = calculatedTotal
-        };
+            TempData["Error"] = "Add at least one valid invoice line item.";
+            return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = form.AssignmentId });
+        }
 
-        var (ok, _, error) = await _invoices.SubmitAsync(dto);
+        foreach (var item in validLineItems)
+        {
+            item.LineTotal = Math.Round(item.Quantity * item.UnitPrice, 2);
+        }
+
+        var calculatedTotal = validLineItems.Sum(x => x.LineTotal);
+
+        if (calculatedTotal <= 0)
+        {
+            TempData["Error"] = "Invoice total must be greater than zero.";
+            return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = form.AssignmentId });
+        }
+
+        var invoiceNumber = string.IsNullOrWhiteSpace(form.InvoiceNumber)
+            ? $"INV-WEB-{DateTime.UtcNow:yyyyMMddHHmmss}"
+            : form.InvoiceNumber.Trim();
+
+        var dto = new InvoiceCreateDto(
+            AssignmentId: form.AssignmentId,
+            TenderApplicationId: form.TenderApplicationId,
+            ContractorId: contractorId,
+            InvoiceNumber: invoiceNumber,
+            OriginalQuotedAmount: tender.QuotedTotalAmount,
+            FinalInvoiceAmount: calculatedTotal,
+            LineItems: validLineItems.Select(x => x.ToDto()).ToList());
+
+        var (ok, data, error) = await _invoices.SubmitAsync(dto);
 
         TempData[ok ? "Success" : "Error"] = ok
-            ? "Invoice submitted successfully."
+            ? $"Invoice {data?.InvoiceNumber ?? invoiceNumber} submitted successfully."
             : error ?? "Failed to submit invoice.";
 
         return ok
             ? RedirectToAction(nameof(MyInvoices))
-            : RedirectToAction(nameof(SubmitInvoice), new { assignmentId = dto.AssignmentId });
+            : RedirectToAction(nameof(SubmitInvoice), new { assignmentId = form.AssignmentId });
     }
+
+    //[HttpPost]
+    //[ValidateAntiForgeryToken]
+    //public async Task<IActionResult> SubmitInvoice(InvoiceCreateDto dto)
+    //{
+    //    if (dto.AssignmentId == Guid.Empty)
+    //    {
+    //        TempData["Error"] = "Invalid assignment id.";
+    //        return RedirectToAction(nameof(MyAssignments));
+    //    }
+
+    //    if (dto.TenderApplicationId == Guid.Empty)
+    //    {
+    //        TempData["Error"] = "Invalid tender reference.";
+    //        return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = dto.AssignmentId });
+    //    }
+
+    //    if (dto.LineItems is null || dto.LineItems.Count == 0)
+    //    {
+    //        TempData["Error"] = "Add at least one invoice line item.";
+    //        return RedirectToAction(nameof(SubmitInvoice), new { assignmentId = dto.AssignmentId });
+    //    }
+
+    //    var calculatedTotal = dto.LineItems.Sum(x => x.LineTotal);
+
+    //    dto = dto with
+    //    {
+    //        FinalInvoiceAmount = calculatedTotal
+    //    };
+
+    //    var (ok, _, error) = await _invoices.SubmitAsync(dto);
+
+    //    TempData[ok ? "Success" : "Error"] = ok
+    //        ? "Invoice submitted successfully."
+    //        : error ?? "Failed to submit invoice.";
+
+    //    return ok
+    //        ? RedirectToAction(nameof(MyInvoices))
+    //        : RedirectToAction(nameof(SubmitInvoice), new { assignmentId = dto.AssignmentId });
+    //}
 
     [HttpGet]
     public async Task<IActionResult> MyInvoices(int page = 1)
@@ -540,6 +637,29 @@ public sealed class ContractorController : BaseController
     {
         await _notifications.MarkAllAsReadAsync();
         return RedirectToAction(nameof(Notifications));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Ratings(int page = 1)
+    {
+        SetUserViewData();
+        ViewData["Title"] = "Ratings";
+        ViewData["ActiveNav"] = "Ratings";
+
+        var contractorId = CurrentUserId();
+
+        if (contractorId == Guid.Empty)
+        {
+            TempData["Error"] = "Your session is missing a valid contractor id. Please sign in again.";
+            return RedirectToAction(nameof(Dashboard));
+        }
+
+        var ratings = await _ratings.GetByContractorAsync(contractorId, page, 10);
+
+        return View(new ContractorRatingsViewModel
+        {
+            Ratings = ratings
+        });
     }
 
     private Guid CurrentUserId()

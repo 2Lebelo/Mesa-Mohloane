@@ -1,34 +1,306 @@
 @model Mesa_Mohloane_Frontend.ViewModels.AuditLogListViewModel
+
 @{
     Layout = "~/Views/Shared/_InspectorShell.cshtml";
     ViewData["Title"] = "Audit Logs";
     ViewData["ActiveNav"] = "AuditLogs";
+
+    var logs = Model.Logs?.Items ?? new List<Mesa_Mohloane_Frontend.Dtos.AuditLogDto>();
+    var currentPage = Model.Logs?.Page ?? 1;
+    var totalPages = Model.Logs?.TotalPages ?? 1;
+    var totalCount = Model.Logs?.TotalCount ?? 0;
 }
-<div class='page-header'><h1 class='page-title'>Audit Logs</h1><div class='page-breadcrumb'><a href='#'>Home</a><span>List</span></div></div>
-<div class='card'>
-    <div class='card-header'><div><div class='card-title'>Audit Logs</div><div class='card-subtitle'>Mesa-Mohloane records</div></div></div>
-    <div class='table-wrap'>
-        <table class='table'>
-            <thead><tr><th>Action</th><th>Entity</th><th>Entity Id</th><th>Actor</th><th>Timestamp</th></tr></thead>
-            <tbody>
-            @if (Model.Logs?.Items?.Any() == true)
-            {
-                foreach (var log in Model.Logs.Items)
-                {
-                    <tr>
-                        <td>@log.ActionType</td>
-                        <td>@log.EntityName</td>
-                        <td>@log.EntityId</td>
-                        <td>@log.ActorUserId</td>
-                        <td>@log.ActionAt.ToString("dd MMM yyyy HH:mm")</td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr><td colspan='5'><div class='empty-state'>No logs found</div></td></tr>
-            }
-            </tbody>
-        </table>
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Audit Logs</h1>
+
+            <div class="page-breadcrumb">
+                <a asp-controller="Inspector" asp-action="Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Audit Logs</span>
+            </div>
+        </div>
+
+        <a asp-controller="Inspector"
+           asp-action="AuditLogs"
+           class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-rotate-right"></i>
+            Refresh
+        </a>
     </div>
-</div>
+
+    <form asp-controller="Inspector"
+          asp-action="AuditLogs"
+          method="get"
+          class="card mb-3">
+
+        <div class="card-header">
+            <div>
+                <div class="card-title">Filter Audit Trail</div>
+                <div class="card-subtitle">Search by entity, action, actor, or date range</div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="grid grid-3">
+                <div class="form-group">
+                    <label class="form-label">Entity Name</label>
+                    <input name="entityName"
+                           value="@Model.EntityName"
+                           class="form-control-light"
+                           placeholder="Incident, Invoice, Assignment..." />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Action Type</label>
+                    <input name="actionType"
+                           value="@Model.ActionType"
+                           class="form-control-light"
+                           placeholder="Created, Approved, Rejected..." />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Actor User ID</label>
+                    <input name="actorUserId"
+                           value="@(Model.ActorUserId?.ToString() ?? "")"
+                           class="form-control-light"
+                           placeholder="User GUID" />
+                </div>
+            </div>
+
+            <div class="grid grid-3 mt-2">
+                <div class="form-group">
+                    <label class="form-label">From</label>
+                    <input name="from"
+                           value="@(Model.From?.ToString("yyyy-MM-ddTHH:mm") ?? "")"
+                           type="datetime-local"
+                           class="form-control-light" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">To</label>
+                    <input name="to"
+                           value="@(Model.To?.ToString("yyyy-MM-ddTHH:mm") ?? "")"
+                           type="datetime-local"
+                           class="form-control-light" />
+                </div>
+
+                <div class="form-group" style="display:flex;align-items:end;gap:.5rem">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-filter"></i>
+                        Filter
+                    </button>
+
+                    <a asp-controller="Inspector"
+                       asp-action="AuditLogs"
+                       class="btn btn-secondary">
+                        Reset
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="grid grid-3 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <div class="stat-value">@totalCount</div>
+                <div class="stat-label">Total Logs</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fa-solid fa-database"></i>
+            </div>
+            <div>
+                <div class="stat-value">@logs.Select(x => x.EntityName).Distinct().Count()</div>
+                <div class="stat-label">Entities on Page</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div>
+                <div class="stat-value">@logs.Where(x => x.ActorUserId.HasValue).Select(x => x.ActorUserId).Distinct().Count()</div>
+                <div class="stat-label">Actors on Page</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">System Audit Trail</div>
+                <div class="card-subtitle">Trace administrative and workflow-sensitive actions</div>
+            </div>
+
+            <span class="badge badge-gray">@totalCount records</span>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Entity</th>
+                        <th>Entity ID</th>
+                        <th>Actor</th>
+                        <th>IP Address</th>
+                        <th>Notes</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (logs.Any())
+                    {
+                        foreach (var log in logs)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="@BadgeForAction(log.ActionTypeLabel)">
+                                        @log.ActionTypeLabel
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <strong>@log.EntityName</strong>
+                                </td>
+
+                                <td title="@DisplayValue(log.EntityId)"
+                                    style="font-family:var(--font-mono);font-size:.78rem">
+                                    @ShortId(log.EntityId)
+                                </td>
+
+                                <td title="@(log.ActorUserId?.ToString() ?? "System")"
+                                    style="font-family:var(--font-mono);font-size:.78rem">
+                                    @(log.ActorUserId.HasValue? ShortId(log.ActorUserId.Value.ToString()) : "System")
+                                </td>
+
+                                <td class="text-sm text-muted">
+                                    @DisplayValue(log.IpAddress)
+                                </td>
+
+                                <td style="max-width:340px">
+                                    <span class="text-sm">
+                                        @DisplayValue(log.Notes)
+                                    </span>
+                                </td>
+
+                                <td class="text-sm text-muted">
+                                    @log.ActionAt.ToString("dd MMM yyyy HH:mm")
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                    <h4>No audit logs found</h4>
+                                    <p>No records matched your filters. Clear filters or confirm that backend audit logging is writing records.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="pagination">
+                <div class="pagination-info">
+                    Page @currentPage of @totalPages — @totalCount records
+                </div>
+
+                <div class="pagination-nav">
+                    @if (currentPage > 1)
+                    {
+                        <a class="page-btn"
+                           asp-controller="Inspector"
+                           asp-action="AuditLogs"
+                           asp-route-page="@(currentPage - 1)"
+                           asp-route-entityName="@Model.EntityName"
+                           asp-route-actionType="@Model.ActionType"
+                           asp-route-actorUserId="@Model.ActorUserId"
+                           asp-route-from="@Model.From"
+                           asp-route-to="@Model.To">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                    }
+
+                    <span class="page-btn active">@currentPage</span>
+
+                    @if (currentPage < totalPages)
+                    {
+                        <a class="page-btn"
+                           asp-controller="Inspector"
+                           asp-action="AuditLogs"
+                           asp-route-page="@(currentPage + 1)"
+                           asp-route-entityName="@Model.EntityName"
+                           asp-route-actionType="@Model.ActionType"
+                           asp-route-actorUserId="@Model.ActorUserId"
+                           asp-route-from="@Model.From"
+                           asp-route-to="@Model.To">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@functions {
+    private static string DisplayValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "—" : value;
+    }
+
+    private static string ShortId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return "—";
+
+        if (value.Length <= 12)
+            return value;
+
+        return $"{value.Substring(0, 8)}…{value.Substring(value.Length - 4)}";
+    }
+
+    private static string BadgeForAction(string? action)
+    {
+        if (string.IsNullOrWhiteSpace(action))
+            return "badge badge-gray badge-dot";
+
+        var normalized = action.ToLowerInvariant();
+
+        if (normalized.Contains("create") || normalized.Contains("submit") || normalized.Contains("login successful"))
+            return "badge badge-success badge-dot";
+
+        if (normalized.Contains("update") || normalized.Contains("validate"))
+            return "badge badge-info badge-dot";
+
+        if (normalized.Contains("approve") || normalized.Contains("assign") || normalized.Contains("disburse"))
+            return "badge badge-primary badge-dot";
+
+        if (normalized.Contains("reject") || normalized.Contains("delete") || normalized.Contains("fail"))
+            return "badge badge-danger badge-dot";
+
+        if (normalized.Contains("complete") || normalized.Contains("started"))
+            return "badge badge-warning badge-dot";
+
+        return "badge badge-gray badge-dot";
+    }
+}

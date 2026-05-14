@@ -1,4 +1,5 @@
-﻿using Mesa_Mohloane_Frontend.Services.Api;
+﻿using Mesa_Mohloane_Frontend.Dtos;
+using Mesa_Mohloane_Frontend.Services.Api;
 using Mesa_Mohloane_Frontend.ViewModels;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -52,7 +53,6 @@ public sealed class InspectorController : BaseController
 
         return View(model);
     }
-
     [HttpGet]
     public async Task<IActionResult> AuditLogs(
         int page = 1,
@@ -63,8 +63,20 @@ public sealed class InspectorController : BaseController
         DateTime? to = null)
     {
         SetUserViewData();
+
         ViewData["Title"] = "Audit Logs";
         ViewData["ActiveNav"] = "AuditLogs";
+
+        page = Math.Max(page, 1);
+
+        var logs = await _auditLogs.GetAllAsync(
+            page,
+            20,
+            entityName,
+            actionType,
+            actorUserId,
+            from,
+            to);
 
         var model = new AuditLogListViewModel
         {
@@ -73,12 +85,17 @@ public sealed class InspectorController : BaseController
             ActorUserId = actorUserId,
             From = from,
             To = to,
-            Logs = await _auditLogs.GetAllAsync(page, 20, entityName, actionType, actorUserId, from, to)
+            Logs = logs ?? new AuditLogPagedResultDto
+            {
+                Items = new List<AuditLogDto>(),
+                Page = page,
+                PageSize = 20,
+                TotalCount = 0
+            }
         };
 
         return View(model);
     }
-
     [HttpGet]
     public async Task<IActionResult> FlaggedInvoices(int page = 1)
     {

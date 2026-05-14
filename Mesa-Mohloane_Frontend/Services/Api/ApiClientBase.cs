@@ -23,6 +23,23 @@ public abstract class ApiClientBase
         HttpContextAccessor = httpContextAccessor;
     }
 
+    //protected HttpClient CreateClient(bool attachJwt = true)
+    //{
+    //    var client = HttpFactory.CreateClient("MesaApi");
+
+    //    if (!attachJwt)
+    //        return client;
+
+    //    var token = GetJwtToken();
+
+    //    if (!string.IsNullOrWhiteSpace(token))
+    //    {
+    //        client.DefaultRequestHeaders.Authorization =
+    //            new AuthenticationHeaderValue("Bearer", token);
+    //    }
+
+    //    return client;
+    //}
     protected HttpClient CreateClient(bool attachJwt = true)
     {
         var client = HttpFactory.CreateClient("MesaApi");
@@ -30,7 +47,11 @@ public abstract class ApiClientBase
         if (!attachJwt)
             return client;
 
-        var token = GetJwtToken();
+        var http = HttpContextAccessor.HttpContext;
+        var token = http?.Session.GetString("jwt_token");
+
+        if (string.IsNullOrWhiteSpace(token))
+            token = http?.User?.FindFirstValue("jwt_token");
 
         if (!string.IsNullOrWhiteSpace(token))
         {

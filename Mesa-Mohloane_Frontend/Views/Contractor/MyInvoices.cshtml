@@ -66,7 +66,7 @@
         <div class="stat-card">
             <div class="stat-icon purple"><i class="fa-solid fa-coins"></i></div>
             <div>
-                <div class="stat-value">M@items.Sum(x => x.FinalInvoiceAmount).ToString("N0")</div>
+                <div class="stat-value">@($"M{items.Sum(x => x.FinalInvoiceAmount).ToString("N0")}")</div>
                 <div class="stat-label">Value On Page</div>
             </div>
         </div>
@@ -103,7 +103,7 @@
                                     @invoice.InvoiceNumber
                                 </td>
 
-                                <td>M@invoice.FinalInvoiceAmount.ToString("N2")</td>
+                                <td>@($"M{invoice.FinalInvoiceAmount.ToString("N2")}")</td>
 
                                 <td>@Html.Raw(InvoiceStatusBadge(invoice.Status))</td>
 

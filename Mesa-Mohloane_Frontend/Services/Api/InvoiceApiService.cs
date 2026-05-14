@@ -241,7 +241,7 @@ public sealed class InvoiceApiService : ApiClientBase, IInvoiceApiService
     }
 
     private static async Task<(bool Ok, T? Data, string? Error)> ParseResponse<T>(
-        HttpResponseMessage res)
+     HttpResponseMessage res)
     {
         var json = await res.Content.ReadAsStringAsync();
 
@@ -258,8 +258,37 @@ public sealed class InvoiceApiService : ApiClientBase, IInvoiceApiService
 
         try
         {
-            var err = JsonSerializer.Deserialize<ApiErrorDto>(json, JsonOpts);
-            return (false, default, err?.Error ?? res.ReasonPhrase);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("error", out var errorProp))
+                return (false, default, errorProp.GetString() ?? res.ReasonPhrase);
+
+            if (root.TryGetProperty("title", out var titleProp) &&
+                root.TryGetProperty("errors", out var errorsProp))
+            {
+                var messages = new List<string>();
+
+                foreach (var property in errorsProp.EnumerateObject())
+                {
+                    foreach (var message in property.Value.EnumerateArray())
+                    {
+                        messages.Add($"{property.Name}: {message.GetString()}");
+                    }
+                }
+
+                var title = titleProp.GetString() ?? res.ReasonPhrase;
+                var details = messages.Count > 0
+                    ? string.Join(" | ", messages)
+                    : title;
+
+                return (false, default, details);
+            }
+
+            if (root.TryGetProperty("title", out var problemTitle))
+                return (false, default, problemTitle.GetString() ?? res.ReasonPhrase);
+
+            return (false, default, json);
         }
         catch
         {

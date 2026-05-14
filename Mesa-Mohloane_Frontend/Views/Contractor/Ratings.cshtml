@@ -1,7 +1,161 @@
+@model Mesa_Mohloane_Frontend.ViewModels.ContractorRatingsViewModel
+
 @{
     Layout = "~/Views/Shared/_ContractorShell.cshtml";
     ViewData["Title"] = "Ratings";
     ViewData["ActiveNav"] = "Ratings";
+
+    var ratings = Model?.Ratings;
+    var items = ratings?.Items ?? Array.Empty<Mesa_Mohloane_Frontend.Dtos.ContractorRatingDto>();
 }
-<div class='page-header'><h1 class='page-title'>Ratings</h1><div class='page-breadcrumb'><a href='#'>Home</a><span>List</span></div></div><div class='card'><div class='card-header'><div><div class='card-title'>Ratings</div><div class='card-subtitle'>Mesa-Mohloane records</div></div></div><div class='table-wrap'><table class='table'><thead><tr><th>#</th><th>Title</th><th>Info</th><th>Status</th><th></th></tr></thead><tbody id='rows'></tbody></table></div></div>
-@section Scripts {<script>document.addEventListener('DOMContentLoaded',async()=>{try{const d=await apiFetch('/api/contractor-ratings/my');const items=d.items||d||[];rows.innerHTML=items.length?items.map(x=>'<tr><td>'+escHtml(x.incidentNumber||x.assignmentNumber||x.invoiceNumber||x.id)+'</td><td>'+escHtml(x.title||x.incidentTitle||x.action||'Record')+'</td><td>'+escHtml(x.locationName||x.entityType||x.contractorName||x.proposal||'—')+'</td><td>'+statusBadge(x.status)+'</td><td><a class=\'btn btn-secondary btn-sm\' href=\'DETAIL?id='+x.id+'\'>View</a></td></tr>').join(''):'<tr><td colspan=5><div class=empty-state>No records found</div></td></tr>'}catch(e){showToast(e.message)}})</script>}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Ratings</h1>
+            <div class="page-breadcrumb">
+                <a asp-controller="Contractor" asp-action="Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Ratings</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-3 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-star"></i>
+            </div>
+            <div>
+                <div class="stat-value">@Model?.AverageStars.ToString("0.0")</div>
+                <div class="stat-label">Average Rating</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-comments"></i>
+            </div>
+            <div>
+                <div class="stat-value">@Model?.TotalRatings</div>
+                <div class="stat-label">Total Ratings</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <div class="stat-value">@items.Count</div>
+                <div class="stat-label">Ratings On This Page</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Citizen Feedback</div>
+                <div class="card-subtitle">
+                    Ratings submitted by citizens after completed and closed jobs.
+                </div>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Incident</th>
+                        <th>Assignment</th>
+                        <th>Stars</th>
+                        <th>Comment</th>
+                        <th>Rated At</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (items.Any())
+                    {
+                        foreach (var rating in items)
+                        {
+                            <tr>
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @rating.IncidentId
+                                </td>
+
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @rating.AssignmentId
+                                </td>
+
+                                <td>
+                                    <span style="color:var(--warning);font-weight:700">
+                                        @Stars(rating.Stars)
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(rating.Comment)
+                                                            ? "—"
+                                                            : rating.Comment)
+                                </td>
+
+                                <td class="text-sm text-muted">
+                                    @rating.RatedAt.ToString("dd MMM yyyy HH:mm")
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-star"></i>
+                                    <h4>No ratings yet</h4>
+                                    <p>Citizen ratings will appear here after closed and paid jobs.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ratings is not null && ratings.TotalPages > 1)
+        {
+            <div class="pagination">
+                <div class="pagination-info">
+                    Page @ratings.Page of @ratings.TotalPages — @ratings.TotalCount records
+                </div>
+
+                <div class="pagination-nav">
+                    <a class="page-btn @(ratings.Page <= 1 ? "d-none" : "")"
+                       asp-controller="Contractor"
+                       asp-action="Ratings"
+                       asp-route-page="@(ratings.Page - 1)">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+
+                    <span class="page-btn active">@ratings.Page</span>
+
+                    <a class="page-btn @(ratings.Page >= ratings.TotalPages ? "d-none" : "")"
+                       asp-controller="Contractor"
+                       asp-action="Ratings"
+                       asp-route-page="@(ratings.Page + 1)">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@functions {
+    private static string Stars(int stars)
+    {
+        stars = Math.Clamp(stars, 1, 5);
+        return new string('★', stars) + new string('☆', 5 - stars);
+    }
+}

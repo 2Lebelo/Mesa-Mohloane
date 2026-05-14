@@ -13,7 +13,7 @@ public class JwtHelper(IConfiguration config)
 
     public DateTime GetExpiry()
     {
-        var expiryHours = _config.GetValue<int?>("Jwt:ExpiryHours") ?? 8;
+        var expiryHours = _config.GetValue<int?>("Jwt:ExpiryHours") ?? 60;
         return DateTime.UtcNow.AddHours(expiryHours);
     }
 
