@@ -47,6 +47,8 @@ public sealed record InvoiceListDto(
 public sealed record InvoiceCreateDto(
     Guid AssignmentId,
     Guid TenderApplicationId,
+    Guid ContractorId,
+    string InvoiceNumber,
     decimal OriginalQuotedAmount,
     decimal FinalInvoiceAmount,
     IReadOnlyCollection<InvoiceLineItemCreateDto> LineItems);

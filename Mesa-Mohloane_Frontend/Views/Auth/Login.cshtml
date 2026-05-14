@@ -18,18 +18,30 @@
     <style>
         :root {
             --primary: #1473ff;
+            --primary-hover: #005de0;
             --primary-dark: #071a4d;
             --primary-soft: #eaf2ff;
             --text-dark: #071a4d;
             --text-muted: #64748b;
-            --border: #e5e7eb;
+            --border: #d9e2ef;
             --white: #ffffff;
+            --danger: #991b1b;
+            --danger-bg: #fef2f2;
+            --danger-border: #fecaca;
+            --radius-sm: 4px;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
         body {
             margin: 0;
+            min-height: 100%;
             font-family: Inter, Arial, sans-serif;
-            background: #f4f7ff;
+            background: var(--white);
+            color: var(--text-dark);
         }
 
         .auth-page {
@@ -40,10 +52,12 @@
         }
 
         .auth-panel {
+            position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 48px 72px;
+            background: var(--white);
+            padding: 96px 72px 48px;
         }
 
         .auth-brand {
@@ -75,13 +89,14 @@
             line-height: 1.1;
             font-weight: 900;
             letter-spacing: -1.5px;
-            margin-bottom: 12px;
+            margin: 0 0 12px;
         }
 
         .auth-sub {
             color: var(--text-muted);
             font-size: 15px;
-            margin-bottom: 32px;
+            margin: 0 0 32px;
+            line-height: 1.6;
         }
 
         .form-group {
@@ -94,29 +109,57 @@
             font-size: 13px;
             font-weight: 800;
             margin-bottom: 8px;
+            letter-spacing: .04em;
+            text-transform: uppercase;
         }
 
         .form-control {
             width: 100%;
             min-height: 52px;
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             padding: 0 16px;
             font-size: 15px;
             outline: none;
-            transition: 0.2s ease;
+            transition: border-color .2s ease, box-shadow .2s ease;
+            background: #ffffff;
+            color: var(--text-dark);
         }
+
+            .form-control::placeholder {
+                color: #94a3b8;
+            }
 
             .form-control:focus {
                 border-color: var(--primary);
-                box-shadow: 0 0 0 4px rgba(20, 115, 255, 0.12);
+                box-shadow: 0 0 0 3px rgba(20, 115, 255, 0.12);
             }
+
+        .password-toggle {
+            position: absolute;
+            right: .85rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0;
+        }
 
         .btn-primary {
             background: var(--primary);
             border: none;
             color: var(--white);
+            cursor: pointer;
+            transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
         }
+
+            .btn-primary:hover {
+                background: var(--primary-hover);
+                transform: translateY(-1px);
+                box-shadow: 0 10px 24px rgba(20, 115, 255, .22);
+            }
 
         .btn-full {
             width: 100%;
@@ -124,16 +167,14 @@
 
         .btn-lg {
             height: 54px;
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             font-weight: 900;
-        }
-
-        .btn-primary:hover {
-            background: #005de0;
+            font-size: 15px;
         }
 
         .auth-visual {
-            background: linear-gradient(rgba(7, 26, 77, 0.88), rgba(7, 26, 77, 0.88)), url('/images/Hero_Image.jpg');
+            min-height: 100vh;
+            background: linear-gradient(rgba(7, 26, 77, 0.88), rgba(7, 26, 77, 0.88)), url('/images/Hero_Image.png');
             background-size: cover;
             background-position: center;
             display: flex;
@@ -141,17 +182,24 @@
             justify-content: center;
             padding: 72px;
             color: var(--white);
+            text-align: center;
         }
 
         .auth-visual-content {
+            width: 100%;
             max-width: 520px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
         }
 
         .auth-visual-icon {
             width: 86px;
             height: 86px;
-            border-radius: 24px;
+            border-radius: 18px;
             background: var(--primary);
             display: inline-flex;
             align-items: center;
@@ -166,25 +214,62 @@
 
         .auth-visual h2 {
             font-size: 42px;
+            line-height: 1.18;
             font-weight: 900;
             letter-spacing: -1px;
-            margin-bottom: 14px;
+            margin: 0 0 14px;
+            color: #ffffff;
         }
 
         .auth-visual p {
-            color: #cbd5e1;
+            color: #dbeafe;
             font-size: 16px;
             line-height: 1.7;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .auth-stats {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2.5rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-stat {
+            text-align: center;
+            min-width: 82px;
+        }
+
+        .auth-stat-value {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #ffffff;
+        }
+
+        .auth-stat-label {
+            font-size: .75rem;
+            color: #cbd5e1;
+        }
+
+        .auth-stat-divider {
+            width: 1px;
+            height: 42px;
+            background: rgba(255,255,255,.18);
         }
 
         .alert-danger {
-            border: 1px solid #fecaca;
-            background: #fef2f2;
-            color: #991b1b;
-            border-radius: 12px;
+            border: 1px solid var(--danger-border);
+            background: var(--danger-bg);
+            color: var(--danger);
+            border-radius: var(--radius-sm);
             padding: 14px 16px;
             margin-bottom: 20px;
             font-size: 14px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
         }
 
         .auth-link {
@@ -192,6 +277,29 @@
             font-weight: 800;
             text-decoration: none;
         }
+
+            .auth-link:hover {
+                text-decoration: underline;
+            }
+
+        .remember-row {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin-bottom: 1.5rem;
+        }
+
+            .remember-row input {
+                accent-color: var(--primary);
+                width: 15px;
+                height: 15px;
+            }
+
+            .remember-row label {
+                color: var(--text-muted);
+                font-size: .9rem;
+                cursor: pointer;
+            }
 
         @@media (max-width: 992px) {
             .auth-page {
@@ -203,11 +311,22 @@
             }
 
             .auth-panel {
+                min-height: 100vh;
                 padding: 120px 28px 48px;
             }
 
             .auth-brand {
                 left: 28px;
+            }
+
+            .auth-card {
+                max-width: 520px;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .auth-title {
+                font-size: 34px;
             }
         }
     </style>
@@ -227,57 +346,57 @@
 
                 @if (ViewData["Error"] is not null)
                 {
-                    <div id="error-alert" class="alert alert-danger">
+                    <div id="error-alert" class="alert-danger">
                         <i class="fa-solid fa-circle-exclamation"></i>
                         <span id="error-msg">@(ViewData["Error"] as string ?? "Invalid credentials.")</span>
                     </div>
                 }
 
-                <form method="post" action="/Auth/Login" novalidate>
+                <form method="post" asp-controller="Auth" asp-action="Login" novalidate>
                     @Html.AntiForgeryToken()
 
                     <input type="hidden" name="returnUrl" value="@(ViewData["ReturnUrl"] as string ?? "")" />
 
                     <div class="form-group">
-                        <label class="form-label">Email address</label>
-                        <input type="email"
-                               id="email"
-                               name="Email"
-                               value="@Model.Email"
+                        <label asp-for="Email" class="form-label">Email address</label>
+                        <input asp-for="Email"
+                               type="email"
                                class="form-control"
                                placeholder="you@example.com"
-                               required
-                               autocomplete="email" />
+                               autocomplete="email"
+                               required />
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" style="display:flex;justify-content:space-between">
-                            Password
-                            <a href="/Auth/ForgotPassword" class="auth-link" style="font-size:.8rem">Forgot password?</a>
+                        <label asp-for="Password" class="form-label" style="display:flex;justify-content:space-between;align-items:center">
+                            <span>Password</span>
+                            <a href="/Auth/ForgotPassword" class="auth-link" style="font-size:.8rem;text-transform:none;letter-spacing:0">
+                                Forgot password?
+                            </a>
                         </label>
 
                         <div style="position:relative">
-                            <input type="password"
+                            <input asp-for="Password"
+                                   type="password"
                                    id="password"
-                                   name="Password"
                                    class="form-control"
                                    placeholder="••••••••"
-                                   required
                                    autocomplete="current-password"
+                                   required
                                    style="padding-right:2.75rem" />
 
                             <button type="button"
                                     id="toggle-pw"
-                                    aria-label="Toggle password visibility"
-                                    style="position:absolute;right:.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer">
+                                    class="password-toggle"
+                                    aria-label="Toggle password visibility">
                                 <i class="fa-solid fa-eye" id="pw-icon"></i>
                             </button>
                         </div>
                     </div>
 
-                    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1.5rem">
-                        <input type="checkbox" id="remember" style="accent-color:var(--primary);width:15px;height:15px" />
-                        <label for="remember" style="color:#64748b;font-size:.9rem;cursor:pointer">Remember me</label>
+                    <div class="remember-row">
+                        <input type="checkbox" id="remember" />
+                        <label for="remember">Remember me</label>
                     </div>
 
                     <button type="submit" class="btn-primary btn-full btn-lg">
@@ -304,24 +423,24 @@
                     through one secure digital platform.
                 </p>
 
-                <div style="display:flex;gap:1rem;margin-top:2.5rem;justify-content:center">
-                    <div style="text-align:center">
-                        <div style="font-size:1.5rem;font-weight:900;color:#ffffff">Secure</div>
-                        <div style="font-size:.75rem;color:#cbd5e1">Access</div>
+                <div class="auth-stats">
+                    <div class="auth-stat">
+                        <div class="auth-stat-value">Secure</div>
+                        <div class="auth-stat-label">Access</div>
                     </div>
 
-                    <div style="width:1px;background:rgba(255,255,255,.18)"></div>
+                    <div class="auth-stat-divider"></div>
 
-                    <div style="text-align:center">
-                        <div style="font-size:1.5rem;font-weight:900;color:#ffffff">Smart</div>
-                        <div style="font-size:.75rem;color:#cbd5e1">Services</div>
+                    <div class="auth-stat">
+                        <div class="auth-stat-value">Smart</div>
+                        <div class="auth-stat-label">Services</div>
                     </div>
 
-                    <div style="width:1px;background:rgba(255,255,255,.18)"></div>
+                    <div class="auth-stat-divider"></div>
 
-                    <div style="text-align:center">
-                        <div style="font-size:1.5rem;font-weight:900;color:#ffffff">24/7</div>
-                        <div style="font-size:.75rem;color:#cbd5e1">Portal</div>
+                    <div class="auth-stat">
+                        <div class="auth-stat-value">24/7</div>
+                        <div class="auth-stat-label">Portal</div>
                     </div>
                 </div>
             </div>
@@ -334,6 +453,8 @@
         document.getElementById('toggle-pw')?.addEventListener('click', () => {
             const password = document.getElementById('password');
             const icon = document.getElementById('pw-icon');
+
+            if (!password || !icon) return;
 
             const isText = password.type === 'text';
             password.type = isText ? 'password' : 'text';

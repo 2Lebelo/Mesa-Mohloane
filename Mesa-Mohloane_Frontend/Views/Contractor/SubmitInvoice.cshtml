@@ -1,3 +1,4 @@
+@using System.Globalization
 @model Mesa_Mohloane_Frontend.ViewModels.SubmitInvoiceViewModel
 
 @{
@@ -6,6 +7,7 @@
     ViewData["ActiveNav"] = "Invoices";
 
     var hasExistingInvoice = Model.ExistingInvoice is not null;
+    var originalQuoteInvariant = Model.OriginalQuotedAmount.ToString(CultureInfo.InvariantCulture);
 }
 
 @section Content {
@@ -90,7 +92,7 @@
             <div class="stat-card">
                 <div class="stat-icon green"><i class="fa-solid fa-file-contract"></i></div>
                 <div>
-                    <div class="stat-value">M@Model.OriginalQuotedAmount.ToString("N0")</div>
+                    <div class="stat-value">@($"M{Model.OriginalQuotedAmount.ToString("N0")}")</div>
                     <div class="stat-label">Original Quote</div>
                 </div>
             </div>
@@ -110,9 +112,22 @@
               id="invoice-form">
             @Html.AntiForgeryToken()
 
+            @* <input type="hidden" name="AssignmentId" value="@Model.Assignment.Id" />
+            <input type="hidden" name="TenderApplicationId" value="@Model.Assignment.TenderApplicationId" />
+
+            <input type="hidden"
+                   name="OriginalQuotedAmount"
+                   value="@originalQuoteInvariant" />
+
+            <input type="hidden"
+                   name="FinalInvoiceAmount"
+                   id="FinalInvoiceAmount"
+                   value="0" /> *@
             <input type="hidden" name="AssignmentId" value="@Model.Assignment.Id" />
             <input type="hidden" name="TenderApplicationId" value="@Model.Assignment.TenderApplicationId" />
-            <input type="hidden" name="OriginalQuotedAmount" value="@Model.OriginalQuotedAmount" />
+            <input type="hidden" name="ContractorId" value="@Model.Assignment.ContractorId" />
+            <input type="hidden" name="InvoiceNumber" value="@($"INV-WEB-{DateTime.UtcNow:yyyyMMddHHmmss}")" />
+            <input type="hidden" name="OriginalQuotedAmount" value="@Model.OriginalQuotedAmount.ToString(CultureInfo.InvariantCulture)" />
             <input type="hidden" name="FinalInvoiceAmount" id="FinalInvoiceAmount" value="0" />
 
             <div class="card">
@@ -165,7 +180,7 @@
                 <div class="card-footer" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
                     <div class="text-sm text-muted">
                         Original approved tender quote:
-                        <strong>M@Model.OriginalQuotedAmount.ToString("N2")</strong>
+                        <strong>@($"M{Model.OriginalQuotedAmount.ToString("N2")}")</strong>
                     </div>
 
                     <button type="submit" class="btn btn-primary" id="submit-btn">
@@ -181,10 +196,11 @@
 @section Scripts {
     <script>
         let lineIndex = 0;
-        const originalQuote = Number('@Model.OriginalQuotedAmount'.replace(',', '.')) || 0;
+        const originalQuote = Number('@originalQuoteInvariant') || 0;
 
         function addLineItem() {
             const tbody = document.getElementById('line-items-body');
+            if (!tbody) return;
 
             const row = document.createElement('tr');
             row.dataset.index = lineIndex;
@@ -211,7 +227,7 @@
                     <input name="LineItems[${lineIndex}].Quantity"
                            class="form-control-light quantity"
                            type="number"
-                           min="0"
+                           min="0.01"
                            step="0.01"
                            value="1"
                            required />
@@ -263,7 +279,22 @@
 
         function removeLineItem(button) {
             button.closest('tr')?.remove();
+            reindexLineItems();
             recalculate();
+        }
+
+        function reindexLineItems() {
+            const rows = document.querySelectorAll('#line-items-body tr');
+
+            rows.forEach((row, index) => {
+                row.dataset.index = index;
+
+                row.querySelectorAll('[name]').forEach(input => {
+                    input.name = input.name.replace(/LineItems\[\d+\]/, `LineItems[${index}]`);
+                });
+            });
+
+            lineIndex = rows.length;
         }
 
         function recalculate() {
@@ -272,7 +303,7 @@
             document.querySelectorAll('#line-items-body tr').forEach(row => {
                 const qty = Number(row.querySelector('.quantity')?.value || 0);
                 const unitPrice = Number(row.querySelector('.unit-price')?.value || 0);
-                const lineTotal = qty * unitPrice;
+                const lineTotal = Math.round((qty * unitPrice) * 100) / 100;
 
                 const lineTotalInput = row.querySelector('.line-total');
                 if (lineTotalInput) {
@@ -282,24 +313,33 @@
                 total += lineTotal;
             });
 
-            document.getElementById('FinalInvoiceAmount').value = total.toFixed(2);
-            document.getElementById('display-total').textContent = `M${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            total = Math.round(total * 100) / 100;
 
-            const variance = originalQuote > 0 ? Math.abs(total - originalQuote) / originalQuote * 100 : 0;
+            const finalInput = document.getElementById('FinalInvoiceAmount');
+            if (finalInput) finalInput.value = total.toFixed(2);
+
+            const totalDisplay = document.getElementById('display-total');
+            if (totalDisplay) {
+                totalDisplay.textContent =
+                    `M${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+
+            const variance = originalQuote > 0
+                ? Math.abs(total - originalQuote) / originalQuote * 100
+                : 0;
+
             const varianceEl = document.getElementById('display-variance');
-
-            varianceEl.textContent = `${variance.toFixed(1)}%`;
-
-            if (variance > 10) {
-                varianceEl.style.color = 'var(--danger)';
-                varianceEl.style.fontWeight = '700';
-            } else {
-                varianceEl.style.color = 'var(--success)';
+            if (varianceEl) {
+                varianceEl.textContent = `${variance.toFixed(1)}%`;
+                varianceEl.style.color = variance > 10 ? 'var(--danger)' : 'var(--success)';
                 varianceEl.style.fontWeight = '700';
             }
         }
 
         document.getElementById('invoice-form')?.addEventListener('submit', function (e) {
+            reindexLineItems();
+            recalculate();
+
             const rows = document.querySelectorAll('#line-items-body tr');
 
             if (rows.length === 0) {
@@ -308,9 +348,7 @@
                 return;
             }
 
-            recalculate();
-
-            const total = Number(document.getElementById('FinalInvoiceAmount').value || 0);
+            const total = Number(document.getElementById('FinalInvoiceAmount')?.value || 0);
 
             if (total <= 0) {
                 e.preventDefault();
@@ -318,9 +356,11 @@
                 return;
             }
 
-            document.getElementById('submit-btn').disabled = true;
-            document.getElementById('submit-btn').innerHTML =
-                '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+            }
         });
 
         addLineItem();

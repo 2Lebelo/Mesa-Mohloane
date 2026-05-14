@@ -20,7 +20,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/Auth/Login";
         options.AccessDeniedPath = "/Auth/AccessDenied";
-        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.ExpireTimeSpan = TimeSpan.FromHours(60);
         options.SlidingExpiration = true;
     });
 
@@ -57,7 +57,7 @@ builder.Services.AddScoped<ITenderApiService, TenderApiService>();
 builder.Services.AddScoped<IAssignmentApiService, AssignmentApiService>();
 builder.Services.AddScoped<IInvoiceApiService, InvoiceApiService>();
 builder.Services.AddScoped<IRatingApiService, RatingApiService>();
-builder.Services.AddScoped<RatingApiService>();
+//builder.Services.AddScoped<RatingApiService>();
 builder.Services.AddScoped<IAuditLogApiService, AuditLogApiService>();
 builder.Services.AddScoped<INotificationApiService, NotificationApiService>();
 builder.Services.AddScoped<IContractorProfileApiService, ContractorProfileApiService>();

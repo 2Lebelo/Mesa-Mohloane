@@ -23,7 +23,8 @@ public sealed class ContractorDashboardViewModel
 
 public sealed class InspectorDashboardViewModel
 {
-    public PagedResultDto<AuditLogDto>? RecentAuditLogs { get; set; }
+    //public PagedResultDto<AuditLogDto>? RecentAuditLogs { get; set; }
+    public AuditLogPagedResultDto? RecentAuditLogs { get; set; }
     public PagedResultDto<InvoiceListDto>? FlaggedInvoices { get; set; }
     public PagedResultDto<NotificationDto>? Notifications { get; set; }
     public int UnreadNotifications { get; set; }
@@ -42,27 +43,29 @@ public sealed class SubmitTenderViewModel
         Array.Empty<TenderLineItemCreateDto>());
 }
 
-public sealed class SubmitInvoiceViewModel
-{
-    public Guid AssignmentId { get; set; }
-    public AssignmentDto? Assignment { get; set; }
-    public InvoiceCreateDto Form { get; set; } = new(
-        Guid.Empty,
-        Guid.Empty,
-        0,
-        0,
-        Array.Empty<InvoiceLineItemCreateDto>());
-}
+//public sealed class SubmitInvoiceViewModel
+//{
+//    public Guid AssignmentId { get; set; }
+//    public AssignmentDto? Assignment { get; set; }
+//    public InvoiceCreateDto Form { get; set; } = new(
+//        Guid.Empty,
+//        Guid.Empty,
+//        0,
+//        0,
+//        Array.Empty<InvoiceLineItemCreateDto>());
+//}
 
 public sealed class InvoiceReviewViewModel
 {
     public InvoiceDto? Invoice { get; set; }
-    public PagedResultDto<AuditLogDto>? AuditLogs { get; set; }
+    //public PagedResultDto<AuditLogDto>? AuditLogs { get; set; }
+    public AuditLogPagedResultDto? AuditLogs { get; set; }
 }
 
 public sealed class AuditLogListViewModel
 {
-    public PagedResultDto<AuditLogDto>? Logs { get; set; }
+    //public PagedResultDto<AuditLogDto>? Logs { get; set; }
+    public AuditLogPagedResultDto? Logs { get; set; }
     public string? EntityName { get; set; }
     public string? ActionType { get; set; }
     public Guid? ActorUserId { get; set; }

@@ -20,7 +20,7 @@
     <style>
         /* ── Mesa Mohloane Token Overrides ───────────────────────── */
         :root {
-            --primary: #1A6B3C; /* Forest green  */
+            --primary: linear-gradient(90deg, #1473FF 0%, #005DE0 100%);
             --primary-light: #E8F5EE;
             --primary-dark: #134F2D;
             --accent: #1B4F8A; /* Municipal blue */
@@ -77,8 +77,8 @@
 
         .sidebar {
             width: var(--sidebar-w);
-            background: #0A1628;
-            background-image: linear-gradient(180deg, #0A1628 0%, #0D2140 100%);
+            background: #071A4D;
+            background-image: linear-gradient(180deg, #071A4D 0%, #0B245F 100%);
             display: flex;
             flex-direction: column;
             position: fixed;
@@ -181,10 +181,10 @@
             }
 
             .sidebar-link.active {
-                background: linear-gradient(90deg, var(--primary) 0%, #1E7D46 100%);
+                background: linear-gradient(90deg, #1473FF 0%, #005DE0 100%);
                 color: #fff;
                 font-weight: 500;
-                box-shadow: 0 3px 12px rgba(26,107,60,.35);
+                box-shadow: 0 3px 12px rgba(20,115,255,.35);
             }
 
                 .sidebar-link.active i {
@@ -1329,7 +1329,7 @@
     </script>
 
     <div class="app-layout">
-        <!-- ── Sidebar ──────────────────────────────────────────── -->
+        <!-- Sidebar  -->
         <aside class="sidebar" id="sidebar">
             <a href="/Admin/Dashboard" class="sidebar-brand">
                 <div class="sidebar-brand-icon"><i class="fa-solid fa-road"></i></div>
@@ -1409,7 +1409,7 @@
             </div>
         </aside>
 
-        <!-- ── Main ─────────────────────────────────────────────── -->
+        <!-- Main -->
         <div class="main-content">
             <header class="topbar">
                 <div class="topbar-left">
@@ -1460,7 +1460,7 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
-        // ── Dropdown ──────────────────────────────────────────────────────────────
+        //  Dropdown 
         document.addEventListener('click', e => {
             const btn = e.target.closest('[data-dropdown-toggle]');
             if (btn) {
@@ -1475,7 +1475,7 @@
             document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
         });
 
-        // ── Sidebar toggle ────────────────────────────────────────────────────────
+        // Sidebar toggle 
         document.addEventListener('click', e => {
             if (e.target.closest('#sidebar-toggle'))
                 document.getElementById('sidebar')?.classList.toggle('open');
@@ -1483,7 +1483,7 @@
                 document.getElementById('sidebar')?.classList.remove('open');
         });
 
-        // ── Modal helpers ─────────────────────────────────────────────────────────
+        // Modal helpers 
         function openModal(id)  { document.getElementById(id)?.classList.add('show'); }
         function closeModal(id) { document.getElementById(id)?.classList.remove('show'); }
         document.addEventListener('click', e => {
@@ -1495,7 +1495,7 @@
                 document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
         });
 
-        // ── Toast ─────────────────────────────────────────────────────────────────
+        // Toast 
         function showToast(message, type = 'info', duration = 3500) {
             let c = document.getElementById('toast-container');
             if (!c) { c = document.createElement('div'); c.id = 'toast-container'; document.body.appendChild(c); }
@@ -1507,7 +1507,7 @@
             setTimeout(() => { t.style.opacity='0'; t.style.transform='translateX(100%)'; t.style.transition='all .3s'; setTimeout(()=>t.remove(),300); }, duration);
         }
 
-        // ── Confirm dialog ────────────────────────────────────────────────────────
+        // Confirm dialog 
         function confirmAction(message, onConfirm) {
             if (!document.getElementById('confirm-modal')) {
                 document.body.insertAdjacentHTML('beforeend', `
@@ -1535,7 +1535,7 @@
             clone.addEventListener('click', () => { closeModal('confirm-modal'); onConfirm(); });
         }
 
-        // ── Sidebar active link ───────────────────────────────────────────────────
+        // Sidebar active link 
         document.addEventListener('DOMContentLoaded', () => {
             const path = window.location.pathname;
             document.querySelectorAll('.sidebar-link').forEach(link => {
@@ -1561,7 +1561,7 @@
             loadNotifCount();
         });
 
-        // ── Notification count ────────────────────────────────────────────────────
+        // Notification count 
         async function loadNotifCount() {
             try {
                 const token = localStorage.getItem('mesa_token');
@@ -1579,7 +1579,7 @@
             } catch { /* ignore */ }
         }
 
-        // ── Logout ────────────────────────────────────────────────────────────────
+        // Logout 
         async function logout() {
             try {
                 const token = localStorage.getItem('mesa_token');
@@ -1591,7 +1591,7 @@
             window.location.href = '/Auth/Logout';
         }
 
-        // ── Format helpers ────────────────────────────────────────────────────────
+        // Format helpers 
         function formatDate(iso) {
             if (!iso) return '—';
             return new Date(iso).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
@@ -1642,7 +1642,7 @@
             return map[status] ?? `<span class="badge badge-gray">${status}</span>`;
         }
 
-        // ── Paginator helper ──────────────────────────────────────────────────────
+        // Paginator helper 
         class Paginator {
             constructor({ container, pageSize = 10, onPageChange }) {
                 this.container = container; this.pageSize = pageSize;

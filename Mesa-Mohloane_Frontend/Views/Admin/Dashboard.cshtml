@@ -5,114 +5,206 @@
 }
 
 @section Content {
+    <style>
+        .dashboard-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(220px, 1fr));
+            gap: 1rem;
+            width: 100%;
+            align-items: stretch;
+            margin-bottom: 1.25rem;
+        }
 
-    <! Page Header 
+            .dashboard-stats-grid .stat-card {
+                min-width: 0;
+                width: 100%;
+                height: auto;
+                display: flex;
+                align-items: flex-start;
+                gap: .9rem;
+                padding: 1.1rem;
+                box-sizing: border-box;
+            }
+
+            .dashboard-stats-grid .stat-icon {
+                flex: 0 0 48px;
+                width: 48px;
+                height: 48px;
+            }
+
+            .dashboard-stats-grid .stat-card > div:last-child {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .dashboard-stats-grid .stat-value {
+                white-space: nowrap;
+                line-height: 1.1;
+            }
+
+            .dashboard-stats-grid .stat-label,
+            .dashboard-stats-grid .stat-change {
+                overflow-wrap: anywhere;
+            }
+
+        @@media (max-width: 1400px) {
+            .dashboard-stats-grid {
+                grid-template-columns: repeat(3, minmax(220px, 1fr));
+            }
+        }
+
+        @@media (max-width: 1100px) {
+            .dashboard-stats-grid {
+                grid-template-columns: repeat(2, minmax(220px, 1fr));
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .dashboard-stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <!-- Page Header -->
     <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
         <div>
             <h1 class="page-title">Dashboard</h1>
             <div class="page-breadcrumb">
-                <a href="#">Home</a>
+                <a href="/Admin/Dashboard">Home</a>
                 <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
                 <span>Overview</span>
             </div>
         </div>
+
         <div style="display:flex;gap:.65rem;flex-wrap:wrap">
-            <button class="btn btn-secondary btn-sm" onclick="loadDashboard()">
-                <i class="fa-solid fa-rotate-right"></i> Refresh
+            <button class="btn btn-secondary btn-sm" type="button" onclick="loadDashboard()">
+                <i class="fa-solid fa-rotate-right"></i>
+                Refresh
             </button>
+
             <a href="/Admin/Incidents?status=0" class="btn btn-primary btn-sm">
-                <i class="fa-solid fa-triangle-exclamation"></i> Pending Incidents
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Pending Incidents
             </a>
         </div>
     </div>
 
-    <! Stat Cards 
-    <div class="grid grid-4 mb-3" id="stat-cards">
+    <!-- Stat Cards -->
+    <div class="dashboard-stats-grid" id="stat-cards">
         <div class="stat-card">
-            <div class="stat-icon blue"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
             <div>
                 <div class="stat-value" id="s-total-incidents">—</div>
                 <div class="stat-label">Total Incidents</div>
                 <div class="stat-change up" id="s-incidents-change">
-                    <i class="fa-solid fa-arrow-up"></i> This month
+                    <i class="fa-solid fa-arrow-up"></i>
+                    This month
                 </div>
             </div>
         </div>
+
         <div class="stat-card">
-            <div class="stat-icon amber"><i class="fa-solid fa-clock"></i></div>
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-clock"></i>
+            </div>
             <div>
                 <div class="stat-value" id="s-pending">—</div>
                 <div class="stat-label">Pending Review</div>
                 <div class="stat-change down" id="s-pending-note" style="color:var(--warning)">
-                    <i class="fa-solid fa-circle-exclamation"></i> Needs attention
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    Needs attention
                 </div>
             </div>
         </div>
+
         <div class="stat-card">
-            <div class="stat-icon green"><i class="fa-solid fa-file-contract"></i></div>
+            <div class="stat-icon green">
+                <i class="fa-solid fa-file-contract"></i>
+            </div>
             <div>
                 <div class="stat-value" id="s-active-tenders">—</div>
                 <div class="stat-label">Active Tenders</div>
             </div>
         </div>
+
         <div class="stat-card">
-            <div class="stat-icon teal"><i class="fa-solid fa-person-digging"></i></div>
+            <div class="stat-icon teal">
+                <i class="fa-solid fa-person-digging"></i>
+            </div>
             <div>
                 <div class="stat-value" id="s-in-progress">—</div>
                 <div class="stat-label">Jobs In Progress</div>
             </div>
         </div>
+
         <div class="stat-card">
-            <div class="stat-icon indigo"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+            <div class="stat-icon indigo">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
             <div>
                 <div class="stat-value" id="s-flagged-invoices">—</div>
                 <div class="stat-label">Flagged Invoices</div>
                 <div class="stat-change down" id="s-flag-note" style="display:none;color:var(--danger)">
-                    <i class="fa-solid fa-flag"></i> Variance &gt;10%
+                    <i class="fa-solid fa-flag"></i>
+                    Variance &gt; 10%
                 </div>
             </div>
         </div>
+
         <div class="stat-card">
-            <div class="stat-icon purple"><i class="fa-solid fa-money-bill-wave"></i></div>
+            <div class="stat-icon purple">
+                <i class="fa-solid fa-money-bill-wave"></i>
+            </div>
             <div>
                 <div class="stat-value" id="s-pending-payments">—</div>
                 <div class="stat-label">Pending Payments</div>
             </div>
         </div>
+
         <div class="stat-card">
-            <div class="stat-icon green"><i class="fa-solid fa-helmet-safety"></i></div>
+            <div class="stat-icon green">
+                <i class="fa-solid fa-helmet-safety"></i>
+            </div>
             <div>
                 <div class="stat-value" id="s-contractors">—</div>
                 <div class="stat-label">Approved Contractors</div>
             </div>
         </div>
+
         <div class="stat-card">
-            <div class="stat-icon cyan"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stat-icon cyan">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
             <div>
                 <div class="stat-value" id="s-completed">—</div>
                 <div class="stat-label">Completed This Month</div>
                 <div class="stat-change up">
-                    <i class="fa-solid fa-arrow-up"></i> Jobs closed
+                    <i class="fa-solid fa-arrow-up"></i>
+                    Jobs closed
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ── Charts Row ────────────────────────────────────────────── -->
+    <!-- Charts Row -->
     <div class="grid grid-2 mb-3">
-        <!-- Incident Trends -->
         <div class="card">
             <div class="card-header">
                 <div>
                     <div class="card-title">Incident Reporting Trends</div>
                     <div class="card-subtitle">Monthly volume by status</div>
                 </div>
+
                 <select class="form-select-light" style="width:130px" id="trend-months" onchange="loadTrendChart()">
                     <option value="3">3 months</option>
                     <option value="6" selected>6 months</option>
                     <option value="12">12 months</option>
                 </select>
             </div>
+
             <div class="card-body">
                 <div id="chart-trend" style="min-height:280px;display:flex;align-items:center;justify-content:center">
                     <div class="spinner"></div>
@@ -120,7 +212,6 @@
             </div>
         </div>
 
-        <!-- Incident Status Breakdown -->
         <div class="card">
             <div class="card-header">
                 <div>
@@ -128,6 +219,7 @@
                     <div class="card-subtitle">Current incident distribution</div>
                 </div>
             </div>
+
             <div class="card-body">
                 <div id="chart-status" style="min-height:280px;display:flex;align-items:center;justify-content:center">
                     <div class="spinner"></div>
@@ -136,20 +228,21 @@
         </div>
     </div>
 
-    <!-- ── Bottom Row ─────────────────────────────────────────────── -->
+    <!-- Bottom Row -->
     <div class="grid grid-2-1">
-
-        <!-- Recent Incidents -->
         <div class="card">
             <div class="card-header">
                 <div>
                     <div class="card-title">Recent Incidents</div>
                     <div class="card-subtitle">Latest citizen reports</div>
                 </div>
+
                 <a href="/Admin/Incidents" class="btn btn-ghost btn-sm">
-                    View all <i class="fa-solid fa-arrow-right" style="font-size:.65rem"></i>
+                    View all
+                    <i class="fa-solid fa-arrow-right" style="font-size:.65rem"></i>
                 </a>
             </div>
+
             <div class="table-wrap">
                 <table class="table">
                     <thead>
@@ -172,10 +265,7 @@
             </div>
         </div>
 
-        <!-- Right column -->
         <div style="display:flex;flex-direction:column;gap:1.2rem">
-
-            <!-- Flagged Invoices -->
             <div class="card">
                 <div class="card-header">
                     <div>
@@ -183,10 +273,14 @@
                             <i class="fa-solid fa-flag" style="color:var(--danger);font-size:.85rem;margin-right:.35rem"></i>
                             Flagged Invoices
                         </div>
-                        <div class="card-subtitle">Variance &gt;10% — requires review</div>
+                        <div class="card-subtitle">Variance &gt; 10% — requires review</div>
                     </div>
-                    <a href="/Admin/Invoices?filter=flagged" class="btn btn-danger btn-sm">View all</a>
+
+                    <a href="/Admin/Invoices?status=4" class="btn btn-danger btn-sm">
+                        View all
+                    </a>
                 </div>
+
                 <div id="flagged-invoices-list" style="padding:0">
                     <div class="empty-state" style="padding:1.5rem">
                         <div class="spinner" style="margin:0 auto"></div>
@@ -194,295 +288,445 @@
                 </div>
             </div>
 
-            <!-- Top Rated Contractors -->
             <div class="card">
                 <div class="card-header">
                     <div>
                         <div class="card-title">Top Contractors</div>
-                        <div class="card-subtitle">By weighted score</div>
+                        <div class="card-subtitle">By rating and completed jobs</div>
                     </div>
+
                     <a href="/Admin/Contractors" class="btn btn-ghost btn-sm">
-                        All <i class="fa-solid fa-arrow-right" style="font-size:.65rem"></i>
+                        All
+                        <i class="fa-solid fa-arrow-right" style="font-size:.65rem"></i>
                     </a>
                 </div>
+
                 <div id="top-contractors-list" style="padding:.5rem 0">
                     <div class="empty-state" style="padding:1.5rem">
                         <div class="spinner" style="margin:0 auto"></div>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 }
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@@3.45.2/dist/apexcharts.min.js"></script>
-    <script>
-        let trendChart, statusChart;
 
-        /* ── Helper: authenticated fetch ─────────────────────────────────────────── */
+    <script>
+        let trendChart;
+        let statusChart;
+
         async function apiFetch(path) {
-            const token = document.cookie.split(';').map(c=>c.trim())
-                            .find(c=>c.startsWith('mesa_token='))?.split('=')[1]
-                        || localStorage.getItem('mesa_token') || '';
             const res = await fetch(path, {
                 headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    'Content-Type': 'application/json'
                 }
             });
+
             if (!res.ok) return null;
             return res.json();
         }
 
-        /* ── Stat cards ─────────────────────────────────────────────────────────── */
         async function loadStats() {
-            // Fetch incident counts by status
             const [allIncidents, contractors] = await Promise.all([
                 apiFetch('/api/incidents?page=1&pageSize=1'),
-                apiFetch('/api/contractor-profiles?page=1&pageSize=1'),
+                apiFetch('/api/contractor-profiles?page=1&pageSize=1')
             ]);
 
             if (allIncidents) {
                 document.getElementById('s-total-incidents').textContent =
                     (allIncidents.totalCount ?? 0).toLocaleString();
             }
+
             if (contractors) {
                 document.getElementById('s-contractors').textContent =
                     (contractors.totalCount ?? 0).toLocaleString();
             }
 
-            // Pending count
             const pending = await apiFetch('/api/incidents?page=1&pageSize=1&status=0');
             if (pending) {
                 const count = pending.totalCount ?? 0;
                 document.getElementById('s-pending').textContent = count.toLocaleString();
+
                 const badge = document.getElementById('pending-badge');
                 if (badge && count > 0) badge.textContent = count;
             }
 
-            // In progress
+            const activeTenders = await apiFetch('/api/incidents?page=1&pageSize=1&status=3');
+            if (activeTenders) {
+                document.getElementById('s-active-tenders').textContent =
+                    (activeTenders.totalCount ?? 0).toLocaleString();
+            }
+
             const inProgress = await apiFetch('/api/incidents?page=1&pageSize=1&status=5');
             if (inProgress) {
                 document.getElementById('s-in-progress').textContent =
                     (inProgress.totalCount ?? 0).toLocaleString();
             }
 
-            // Completed this month
             const completed = await apiFetch('/api/incidents?page=1&pageSize=1&status=6');
             if (completed) {
                 document.getElementById('s-completed').textContent =
                     (completed.totalCount ?? 0).toLocaleString();
             }
 
-            // Flagged invoices
             const flagged = await apiFetch('/api/invoices/flagged?page=1&pageSize=1');
             if (flagged) {
                 const count = flagged.totalCount ?? (Array.isArray(flagged) ? flagged.length : 0);
                 document.getElementById('s-flagged-invoices').textContent = count.toLocaleString();
+
                 if (count > 0) {
                     document.getElementById('s-flag-note').style.display = 'flex';
+
                     const badge = document.getElementById('flagged-badge');
                     if (badge) badge.textContent = count;
                 }
             }
+
+            const pendingPaymentsEl = document.getElementById('s-pending-payments');
+            if (pendingPaymentsEl) {
+                pendingPaymentsEl.textContent = '—';
+            }
         }
 
-        /* ── Recent incidents table ─────────────────────────────────────────────── */
         async function loadRecentIncidents() {
             const data = await apiFetch('/api/incidents?page=1&pageSize=8');
             const tbody = document.getElementById('recent-incidents-body');
+
             if (!data || !data.items || data.items.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5">
-                  <div class="empty-state">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <h4>No incidents yet</h4>
-                    <p>Incidents reported by citizens will appear here</p>
-                  </div></td></tr>`;
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <h4>No incidents yet</h4>
+                                <p>Incidents reported by citizens will appear here.</p>
+                            </div>
+                        </td>
+                    </tr>`;
                 return;
             }
+
             tbody.innerHTML = data.items.map(i => `
                 <tr>
-                  <td><span style="font-family:var(--font-mono);font-size:.78rem;color:var(--accent);font-weight:500">${i.incidentNumber}</span></td>
-                  <td>
-                    <a href="/Admin/Incidents/Detail?id=${i.id}" style="color:var(--text-primary);font-weight:500;font-size:.855rem;text-decoration:none;display:block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
-                       title="${escHtml(i.title)}">${escHtml(i.title)}</a>
-                  </td>
-                  <td><span class="text-sm text-muted">${escHtml(i.locationName ?? '—')}</span></td>
-                  <td>${incidentStatusBadge(i.status)}</td>
-                  <td><span class="text-sm text-muted">${formatDate(i.reportedAt)}</span></td>
+                    <td>
+                        <span style="font-family:var(--font-mono);font-size:.78rem;color:var(--accent);font-weight:500">
+                            ${escHtml(i.incidentNumber)}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="/Admin/IncidentDetails?id=${i.id}"
+                           style="color:var(--text-primary);font-weight:500;font-size:.855rem;text-decoration:none;display:block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                           title="${escHtml(i.title)}">
+                            ${escHtml(i.title)}
+                        </a>
+                    </td>
+                    <td>
+                        <span class="text-sm text-muted">${escHtml(i.locationName ?? '—')}</span>
+                    </td>
+                    <td>${incidentStatusBadge(i.status)}</td>
+                    <td>
+                        <span class="text-sm text-muted">${formatDate(i.reportedAt)}</span>
+                    </td>
                 </tr>`).join('');
         }
 
-        /*  Flagged invoices list  */
         async function loadFlaggedInvoices() {
             const data = await apiFetch('/api/invoices/flagged?page=1&pageSize=4');
             const el = document.getElementById('flagged-invoices-list');
             const items = Array.isArray(data) ? data : data?.items ?? [];
+
             if (!items.length) {
-                el.innerHTML = `<div class="empty-state" style="padding:1.25rem">
-                  <i class="fa-solid fa-circle-check" style="color:var(--success)"></i>
-                  <h4>No flagged invoices</h4><p>All invoices within threshold</p>
-                </div>`;
+                el.innerHTML = `
+                    <div class="empty-state" style="padding:1.25rem">
+                        <i class="fa-solid fa-circle-check" style="color:var(--success)"></i>
+                        <h4>No flagged invoices</h4>
+                        <p>All invoices are within the allowed threshold.</p>
+                    </div>`;
                 return;
             }
+
             el.innerHTML = items.map(inv => `
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:.82rem 1.25rem;border-bottom:1px solid var(--border-light)">
-                  <div>
-                    <div style="font-size:.845rem;font-weight:600;color:var(--text-primary);font-family:var(--font-mono)">${escHtml(inv.invoiceNumber)}</div>
-                    <div class="text-sm text-muted">M${formatMoney(inv.finalInvoiceAmount)}</div>
-                  </div>
-                  <a href="/Admin/Invoices/Detail?id=${inv.id}" class="btn btn-danger btn-sm" style="flex-shrink:0">
-                    <i class="fa-solid fa-eye"></i> Review
-                  </a>
+                    <div>
+                        <div style="font-size:.845rem;font-weight:600;color:var(--text-primary);font-family:var(--font-mono)">
+                            ${escHtml(inv.invoiceNumber)}
+                        </div>
+                        <div class="text-sm text-muted">M${formatMoney(inv.finalInvoiceAmount)}</div>
+                    </div>
+                    <a href="/Admin/InvoiceDetails?id=${inv.id}" class="btn btn-danger btn-sm" style="flex-shrink:0">
+                        <i class="fa-solid fa-eye"></i>
+                        Review
+                    </a>
                 </div>`).join('');
         }
 
-        /* ── Top contractors ────────────────────────────────────────────────────── */
         async function loadTopContractors() {
             const data = await apiFetch('/api/contractor-profiles?page=1&pageSize=5');
             const el = document.getElementById('top-contractors-list');
             const items = Array.isArray(data) ? data : data?.items ?? [];
+
             if (!items.length) {
-                el.innerHTML = `<div class="empty-state" style="padding:1.25rem">
-                  <i class="fa-solid fa-helmet-safety"></i>
-                  <h4>No contractors yet</h4>
-                </div>`;
+                el.innerHTML = `
+                    <div class="empty-state" style="padding:1.25rem">
+                        <i class="fa-solid fa-helmet-safety"></i>
+                        <h4>No contractors yet</h4>
+                    </div>`;
                 return;
             }
+
             el.innerHTML = items.map((c, idx) => `
                 <div style="display:flex;align-items:center;gap:.85rem;padding:.75rem 1.25rem;border-bottom:1px solid var(--border-light)">
-                  <span style="font-size:.7rem;font-weight:700;color:var(--text-muted);width:16px;text-align:center">${idx+1}</span>
-                  <div style="width:34px;height:34px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:600;flex-shrink:0">
-                    ${initials(c.companyName)}
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:.845rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(c.companyName)}</div>
-                    <div class="text-sm text-muted">${c.completedJobsCount ?? 0} jobs &middot; ${c.coverageArea ?? ''}</div>
-                  </div>
-                  <div style="text-align:right;flex-shrink:0">
-                    <div style="font-size:.845rem;font-weight:700;color:var(--warning)">
-                      ${'★'.repeat(Math.round(c.averageRating ?? 0))}${'☆'.repeat(5-Math.round(c.averageRating ?? 0))}
+                    <span style="font-size:.7rem;font-weight:700;color:var(--text-muted);width:16px;text-align:center">
+                        ${idx + 1}
+                    </span>
+                    <div style="width:34px;height:34px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:.75rem;font-weight:600;flex-shrink:0">
+                        ${initials(c.companyName)}
                     </div>
-                    <div class="text-sm text-muted">${(c.averageRating ?? 0).toFixed(1)}</div>
-                  </div>
+                    <div style="flex:1;min-width:0">
+                        <div style="font-size:.845rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                            ${escHtml(c.companyName)}
+                        </div>
+                        <div class="text-sm text-muted">
+                            ${c.completedJobsCount ?? 0} jobs &middot; ${escHtml(c.coverageArea ?? '')}
+                        </div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0">
+                        <div style="font-size:.845rem;font-weight:700;color:var(--warning)">
+                            ${'★'.repeat(Math.round(c.averageRating ?? 0))}${'☆'.repeat(5 - Math.round(c.averageRating ?? 0))}
+                        </div>
+                        <div class="text-sm text-muted">${(c.averageRating ?? 0).toFixed(1)}</div>
+                    </div>
                 </div>`).join('');
         }
 
-        /* ── Trend chart ─────────────────────────────────────────────────────────── */
         async function loadTrendChart() {
             const months = document.getElementById('trend-months').value;
-            document.getElementById('chart-trend').innerHTML =
-                '<div class="spinner" style="margin:0 auto;align-self:center"></div>';
+            const chartEl = document.getElementById('chart-trend');
 
-            // Build synthetic monthly data from real counts
+            chartEl.innerHTML = '<div class="spinner" style="margin:0 auto;align-self:center"></div>';
+
             const labels = [];
-            const reported = [], verified = [], completed = [];
+            const reported = [];
+            const verified = [];
+            const completed = [];
             const now = new Date();
+
             for (let m = parseInt(months) - 1; m >= 0; m--) {
                 const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
-                labels.push(d.toLocaleDateString('en-GB', { month:'short', year:'2-digit' }));
-                // Real implementation would call a reports endpoint; seed with zeros for now
-                reported.push(0); verified.push(0); completed.push(0);
+                labels.push(d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }));
+                reported.push(0);
+                verified.push(0);
+                completed.push(0);
             }
 
-            // Try to load from a reports endpoint if available
             try {
-                const data = await apiFetch(`/api/incidents?page=1&pageSize=200`);
+                const data = await apiFetch('/api/incidents?page=1&pageSize=200');
+
                 if (data?.items) {
                     data.items.forEach(inc => {
                         const d = new Date(inc.reportedAt);
-                        const diff = (now.getFullYear()-d.getFullYear())*12 + (now.getMonth()-d.getMonth());
+                        const diff = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+
                         if (diff >= 0 && diff < parseInt(months)) {
                             const idx = parseInt(months) - 1 - diff;
                             reported[idx]++;
-                            if ([2,3,4,5,6,7].includes(inc.status)) verified[idx]++;
-                            if ([6,7].includes(inc.status)) completed[idx]++;
+
+                            if ([2, 3, 4, 5, 6, 7].includes(inc.status)) verified[idx]++;
+                            if ([6, 7].includes(inc.status)) completed[idx]++;
                         }
                     });
                 }
-            } catch { /* use zeros */ }
+            } catch {
+                // Keep zero data if endpoint is unavailable.
+            }
 
             const opts = {
-                chart: { type:'area', height:260, toolbar:{ show:false }, fontFamily:'Plus Jakarta Sans, sans-serif', animations:{ enabled:true, speed:600 } },
+                chart: {
+                    type: 'area',
+                    height: 260,
+                    toolbar: { show: false },
+                    fontFamily: 'Plus Jakarta Sans, sans-serif',
+                    animations: { enabled: true, speed: 600 }
+                },
                 series: [
-                    { name:'Reported',  data: reported  },
-                    { name:'Verified',  data: verified  },
-                    { name:'Completed', data: completed },
+                    { name: 'Reported', data: reported },
+                    { name: 'Verified', data: verified },
+                    { name: 'Completed', data: completed }
                 ],
-                xaxis: { categories: labels, labels:{ style:{ colors:'#7A93AC', fontSize:'11px' } }, axisBorder:{show:false}, axisTicks:{show:false} },
-                yaxis: { labels:{ style:{ colors:'#7A93AC', fontSize:'11px' } }, min:0 },
-                colors: ['#1B4F8A','#1A6B3C','#0891B2'],
-                fill:   { type:'gradient', gradient:{ shadeIntensity:1, opacityFrom:.2, opacityTo:.02, stops:[0,90,100] } },
-                stroke: { curve:'smooth', width:2 },
-                grid:   { borderColor:'#E8EFF5', strokeDashArray:4 },
-                legend: { position:'top', horizontalAlign:'right', labels:{ colors:'#3D5166' }, fontSize:'12px' },
-                tooltip:{ theme:'light' },
-                dataLabels:{ enabled:false },
+                xaxis: {
+                    categories: labels,
+                    labels: { style: { colors: '#7A93AC', fontSize: '11px' } },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                yaxis: {
+                    labels: { style: { colors: '#7A93AC', fontSize: '11px' } },
+                    min: 0
+                },
+                colors: ['#1B4F8A', '#1A6B3C', '#0891B2'],
+                fill: {
+                    type: 'gradient',
+                    gradient: { shadeIntensity: 1, opacityFrom: .2, opacityTo: .02, stops: [0, 90, 100] }
+                },
+                stroke: { curve: 'smooth', width: 2 },
+                grid: { borderColor: '#E8EFF5', strokeDashArray: 4 },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'right',
+                    labels: { colors: '#3D5166' },
+                    fontSize: '12px'
+                },
+                tooltip: { theme: 'light' },
+                dataLabels: { enabled: false }
             };
 
             if (trendChart) trendChart.destroy();
-            document.getElementById('chart-trend').innerHTML = '';
-            trendChart = new ApexCharts(document.getElementById('chart-trend'), opts);
+
+            chartEl.innerHTML = '';
+            trendChart = new ApexCharts(chartEl, opts);
             trendChart.render();
         }
 
-        /* ── Status breakdown donut ─────────────────────────────────────────────── */
         async function loadStatusChart() {
-            document.getElementById('chart-status').innerHTML =
-                '<div class="spinner" style="margin:0 auto;align-self:center"></div>';
+            const chartEl = document.getElementById('chart-status');
+            chartEl.innerHTML = '<div class="spinner" style="margin:0 auto;align-self:center"></div>';
 
-            const statusLabels = ['Pending','Reported','Verified','Published','Assigned','In Progress','Completed','Closed'];
-            const statusColors = ['#D97706','#3B82F6','#1B4F8A','#1A6B3C','#7C3AED','#0891B2','#16A34A','#6B7280'];
+            const statusLabels = ['Pending', 'Reported', 'Verified', 'Published', 'Assigned', 'In Progress', 'Completed', 'Closed'];
+            const statusColors = ['#D97706', '#3B82F6', '#1B4F8A', '#1A6B3C', '#7C3AED', '#0891B2', '#16A34A', '#6B7280'];
             const counts = new Array(8).fill(0);
 
             try {
-                // Fetch per-status counts
                 for (let s = 0; s <= 7; s++) {
                     const r = await apiFetch(`/api/incidents?page=1&pageSize=1&status=${s}`);
                     if (r) counts[s] = r.totalCount ?? 0;
                 }
-            } catch { /* zeros */ }
+            } catch {
+                // Keep zero data if endpoint is unavailable.
+            }
 
-            // Filter out zero-count statuses for cleaner chart
-            const filtered = statusLabels.map((l, i) => ({ label:l, count:counts[i], color:statusColors[i] }))
-                                          .filter(x => x.count > 0);
+            const filtered = statusLabels
+                .map((label, i) => ({ label, count: counts[i], color: statusColors[i] }))
+                .filter(x => x.count > 0);
 
             if (!filtered.length) {
-                document.getElementById('chart-status').innerHTML =
-                    '<div class="empty-state"><i class="fa-solid fa-chart-pie"></i><h4>No data yet</h4></div>';
+                chartEl.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <h4>No data yet</h4>
+                    </div>`;
                 return;
             }
 
             const opts = {
-                chart: { type:'donut', height:260, fontFamily:'Plus Jakarta Sans, sans-serif', animations:{ enabled:true, speed:600 } },
+                chart: {
+                    type: 'donut',
+                    height: 260,
+                    fontFamily: 'Plus Jakarta Sans, sans-serif',
+                    animations: { enabled: true, speed: 600 }
+                },
                 series: filtered.map(x => x.count),
                 labels: filtered.map(x => x.label),
                 colors: filtered.map(x => x.color),
-                legend: { position:'right', labels:{ colors:'#3D5166' }, fontSize:'12px', markers:{ width:8, height:8, radius:4 } },
-                plotOptions: { pie: { donut: { size:'62%', labels: { show:true, total:{ show:true, label:'Total', color:'#3D5166', fontSize:'12px', fontWeight:600,
-                    formatter: w => w.globals.seriesTotals.reduce((a,b)=>a+b,0).toLocaleString() } } } } },
-                dataLabels: { enabled:false },
-                stroke: { width:0 },
-                tooltip: { theme:'light' },
+                legend: {
+                    position: 'right',
+                    labels: { colors: '#3D5166' },
+                    fontSize: '12px',
+                    markers: { width: 8, height: 8, radius: 4 }
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '62%',
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: 'Total',
+                                    color: '#3D5166',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    formatter: w => w.globals.seriesTotals.reduce((a, b) => a + b, 0).toLocaleString()
+                                }
+                            }
+                        }
+                    }
+                },
+                dataLabels: { enabled: false },
+                stroke: { width: 0 },
+                tooltip: { theme: 'light' }
             };
 
             if (statusChart) statusChart.destroy();
-            document.getElementById('chart-status').innerHTML = '';
-            statusChart = new ApexCharts(document.getElementById('chart-status'), opts);
+
+            chartEl.innerHTML = '';
+            statusChart = new ApexCharts(chartEl, opts);
             statusChart.render();
         }
 
-        /* ── Utility ─────────────────────────────────────────────────────────────── */
         function formatMoney(n) {
-            return (n ?? 0).toLocaleString('en-LS', { minimumFractionDigits:2, maximumFractionDigits:2 });
-        }
-        function escHtml(str) {
-            const d = document.createElement('div'); d.appendChild(document.createTextNode(str ?? '')); return d.innerHTML;
+            return (n ?? 0).toLocaleString('en-LS', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
         }
 
-        /* ── Main loader ─────────────────────────────────────────────────────────── */
+        function formatDate(value) {
+            if (!value) return '—';
+
+            return new Date(value).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        }
+
+        function initials(value) {
+            const text = (value ?? '').trim();
+
+            if (!text) return '—';
+
+            return text
+                .split(/\s+/)
+                .slice(0, 2)
+                .map(x => x[0])
+                .join('')
+                .toUpperCase();
+        }
+
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.appendChild(document.createTextNode(str ?? ''));
+            return d.innerHTML;
+        }
+
+        function incidentStatusBadge(status) {
+            switch (status) {
+                case 0:
+                    return '<span class="badge badge-warning badge-dot">Pending</span>';
+                case 1:
+                    return '<span class="badge badge-info badge-dot">Reported</span>';
+                case 2:
+                    return '<span class="badge badge-blue badge-dot">Verified</span>';
+                case 3:
+                    return '<span class="badge badge-primary badge-dot">Published</span>';
+                case 4:
+                    return '<span class="badge badge-purple badge-dot">Assigned</span>';
+                case 5:
+                    return '<span class="badge badge-info badge-dot">In Progress</span>';
+                case 6:
+                    return '<span class="badge badge-success badge-dot">Completed</span>';
+                case 7:
+                    return '<span class="badge badge-gray badge-dot">Closed</span>';
+                case 8:
+                    return '<span class="badge badge-danger badge-dot">Rejected</span>';
+                default:
+                    return `<span class="badge badge-gray">${status}</span>`;
+            }
+        }
+
         async function loadDashboard() {
             await Promise.all([
                 loadStats(),
@@ -490,14 +734,11 @@
                 loadFlaggedInvoices(),
                 loadTopContractors(),
                 loadTrendChart(),
-                loadStatusChart(),
+                loadStatusChart()
             ]);
         }
 
-        // Boot
         loadDashboard();
-
-        // Auto-refresh every 2 minutes
-        setInterval(loadDashboard, 120_000);
+        setInterval(loadDashboard, 120000);
     </script>
 }

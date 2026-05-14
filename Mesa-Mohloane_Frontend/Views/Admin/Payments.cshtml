@@ -1,30 +1,400 @@
-@model Mesa_Mohloane_Frontend.Dtos.PaymentDto
+@using System.Globalization
+@model Mesa_Mohloane_Frontend.ViewModels.PaymentReviewViewModel
+
 @{
     Layout = "~/Views/Shared/_AdminShell.cshtml";
     ViewData["Title"] = "Payments";
     ViewData["ActiveNav"] = "Payments";
+
+    var invoice = Model?.Invoice;
+    var payment = Model?.Payment;
+    var canInitiate = Model?.CanInitiatePayment == true;
 }
-<div class="page-header">
-    <h1 class="page-title">Payments</h1>
-    <div class="page-breadcrumb"><a href="#">Home</a><i class="fa-solid fa-chevron-right"></i><span>Payments</span></div>
-</div>
-<div class="card">
-    <div class="card-header">
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
         <div>
-            <div class="card-title">Payment Details</div>
-            <div class="card-subtitle">Initiate or review payment for invoice</div>
+            <h1 class="page-title">Payments</h1>
+            <div class="page-breadcrumb">
+                <a href="/Admin/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Payments</span>
+            </div>
         </div>
+
+        <a asp-controller="Admin"
+           asp-action="Invoices"
+           class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back to Invoices
+        </a>
     </div>
-    <div class="card-body">
-        @if (Model is null)
-        {
-            <div class="empty-state">Select an invoice to view payment details.</div>
-        }
-        else
-        {
-            <p><strong>Invoice:</strong> @Model.InvoiceId</p>
-            <p><strong>Amount:</strong> @Model.Amount.ToString("C")</p>
-            <p><strong>Status:</strong> @Model.Status</p>
-        }
-    </div>
-</div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    @if (Model is null || !Model.HasInvoice && !Model.HasPayment)
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="empty-state">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                    <h4>No payment selected</h4>
+                    <p>Select an approved invoice before initiating or reviewing payment.</p>
+                    <a asp-controller="Admin" asp-action="Invoices" class="btn btn-primary btn-sm mt-2">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                        Go to Invoices
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                </div>
+                <div>
+                    <div class="stat-value">
+                        @(invoice?.InvoiceNumber ?? "—")
+                    </div>
+                    <div class="stat-label">Invoice Reference</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                </div>
+                <div>
+                    <div class="stat-value">
+                        M@((invoice?.FinalInvoiceAmount ?? payment?.Amount ?? 0).ToString("N2"))
+                    </div>
+                    <div class="stat-label">Payment Amount</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon amber">
+                    <i class="fa-solid fa-circle-info"></i>
+                </div>
+                <div>
+                    <div class="stat-value">
+                        @if (payment is null)
+                        {
+                            <span>Not Initiated</span>
+                        }
+                        else
+                        {
+                            <span>@PaymentStatusText(payment.Status)</span>
+                        }
+                    </div>
+                    <div class="stat-label">Payment Status</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-2">
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Invoice Readiness</div>
+                        <div class="card-subtitle">Payment requires approved invoice and acknowledgement</div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @if (invoice is null)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>Invoice details could not be loaded.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="display:flex;flex-direction:column;gap:.75rem">
+                            <div>
+                                <div class="text-sm text-muted">Invoice ID</div>
+                                <div class="fw-600" style="font-family:var(--font-mono);font-size:.8rem">@invoice.Id</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Invoice Number</div>
+                                <div class="fw-600">@invoice.InvoiceNumber</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Final Amount</div>
+                                <div class="fw-600">@($"M{invoice.FinalInvoiceAmount.ToString("N2")}")</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Invoice Status</div>
+                                <div>@Html.Raw(InvoiceStatusBadge(invoice.Status))</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Approved At</div>
+                                <div class="fw-600">@(invoice.ApprovedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Acknowledged At</div>
+                                <div class="fw-600">@(invoice.CitizenAcknowledgedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (invoice is not null)
+                {
+                    <div class="card-footer">
+                        <a asp-controller="Admin"
+                           asp-action="InvoiceDetails"
+                           asp-route-id="@invoice.Id"
+                           class="btn btn-secondary btn-sm">
+                            <i class="fa-solid fa-eye"></i>
+                            View Invoice
+                        </a>
+                    </div>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Payment Action</div>
+                        <div class="card-subtitle">Initiate, approve, disburse, or fail payment</div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @if (payment is null)
+                    {
+                        if (canInitiate && invoice is not null)
+                        {
+                            <form asp-controller="Admin"
+                                  asp-action="InitiatePayment"
+                                  method="post">
+                                @Html.AntiForgeryToken()
+
+                                <input type="hidden" name="InvoiceId" value="@invoice.Id" />
+                                <input type="hidden"
+                                       name="Amount"
+                                       value="@invoice.FinalInvoiceAmount.ToString(CultureInfo.InvariantCulture)" />
+
+                                <div class="form-group">
+                                    <label class="form-label">Payment Reference</label>
+                                    <input class="form-control-light"
+                                           name="PaymentReference"
+                                           value="@Model!.SuggestedPaymentReference"
+                                           required />
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">Payment Method</label>
+                                    <select class="form-select-light" name="Method" required>
+                                        <option value="BankTransfer">Bank Transfer</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="MobileMoney">Mobile Money</option>
+                                        <option value="Cheque">Cheque</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa-solid fa-money-bill-transfer"></i>
+                                    Initiate Payment
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning">
+                                <i class="fa-solid fa-lock"></i>
+                                <span>
+                                    Payment cannot be initiated yet. The invoice must be approved and acknowledged.
+                                </span>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div style="display:flex;flex-direction:column;gap:.75rem">
+                            <div>
+                                <div class="text-sm text-muted">Payment ID</div>
+                                <div class="fw-600" style="font-family:var(--font-mono);font-size:.8rem">@payment.Id</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Reference</div>
+                                <div class="fw-600">@payment.PaymentReference</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Method</div>
+                                <div class="fw-600">@payment.Method</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Status</div>
+                                <div>@Html.Raw(PaymentStatusBadge(payment.Status))</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Initiated At</div>
+                                <div class="fw-600">@payment.InitiatedAt.ToString("dd MMM yyyy HH:mm")</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Approved At</div>
+                                <div class="fw-600">@(payment.ApprovedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+
+                            <div>
+                                <div class="text-sm text-muted">Disbursed At</div>
+                                <div class="fw-600">@(payment.DisbursedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(payment.FailureReason))
+                            {
+                                <div class="alert alert-danger">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <span>@payment.FailureReason</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                @if (payment is not null)
+                {
+                    <div class="card-footer" style="display:flex;gap:.5rem;flex-wrap:wrap">
+                        @if (payment.Status == 1)
+                        {
+                            <form asp-controller="Admin"
+                                  asp-action="ApprovePayment"
+                                  method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@payment.Id" />
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fa-solid fa-check"></i>
+                                    Approve Payment
+                                </button>
+                            </form>
+
+                            <form asp-controller="Admin"
+                                  asp-action="FailPayment"
+                                  method="post"
+                                  style="display:flex;gap:.4rem;flex-wrap:wrap">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@payment.Id" />
+                                <input class="form-control-light"
+                                       name="reason"
+                                       placeholder="Failure reason"
+                                       style="max-width:240px"
+                                       required />
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fa-solid fa-xmark"></i>
+                                    Mark Failed
+                                </button>
+                            </form>
+                        }
+
+                        @if (payment.Status == 2)
+                        {
+                            <form asp-controller="Admin"
+                                  asp-action="DisbursePayment"
+                                  method="post"
+                                  onsubmit="return confirm('Disburse this payment? This will close the related invoice, assignment, and incident.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@payment.Id" />
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fa-solid fa-money-bill-transfer"></i>
+                                    Disburse Payment
+                                </button>
+                            </form>
+
+                            <form asp-controller="Admin"
+                                  asp-action="FailPayment"
+                                  method="post"
+                                  style="display:flex;gap:.4rem;flex-wrap:wrap">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@payment.Id" />
+                                <input class="form-control-light"
+                                       name="reason"
+                                       placeholder="Failure reason"
+                                       style="max-width:240px"
+                                       required />
+                                <button type="submit" class="btn btn-danger btn-sm">
+                                    <i class="fa-solid fa-xmark"></i>
+                                    Mark Failed
+                                </button>
+                            </form>
+                        }
+
+                        @if (payment.Status == 3)
+                        {
+                            <span class="badge badge-success badge-dot">
+                                Payment disbursed. Case closed.
+                            </span>
+                        }
+
+                        @if (payment.Status == 4)
+                        {
+                            <span class="badge badge-danger badge-dot">
+                                Payment failed.
+                            </span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+}
+
+@functions {
+    private static string InvoiceStatusBadge(int status) => status switch
+    {
+        1 => "<span class=\"badge badge-info badge-dot\">Submitted</span>",
+        2 => "<span class=\"badge badge-blue badge-dot\">Validated</span>",
+        3 => "<span class=\"badge badge-success badge-dot\">Approved</span>",
+        4 => "<span class=\"badge badge-danger badge-dot\">Flagged</span>",
+        5 => "<span class=\"badge badge-primary badge-dot\">Disbursed</span>",
+        6 => "<span class=\"badge badge-danger badge-dot\">Rejected</span>",
+        _ => $"<span class=\"badge badge-gray\">{status}</span>"
+    };
+
+    private static string PaymentStatusText(int status) => status switch
+    {
+        1 => "Initiated",
+        2 => "Approved",
+        3 => "Disbursed",
+        4 => "Failed",
+        _ => status.ToString()
+    };
+
+    private static string PaymentStatusBadge(int status) => status switch
+    {
+        1 => "<span class=\"badge badge-info badge-dot\">Initiated</span>",
+        2 => "<span class=\"badge badge-blue badge-dot\">Approved</span>",
+        3 => "<span class=\"badge badge-success badge-dot\">Disbursed</span>",
+        4 => "<span class=\"badge badge-danger badge-dot\">Failed</span>",
+        _ => $"<span class=\"badge badge-gray\">{status}</span>"
+    };
+}

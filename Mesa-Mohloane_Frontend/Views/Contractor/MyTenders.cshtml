@@ -72,7 +72,7 @@
                 <i class="fa-solid fa-coins"></i>
             </div>
             <div>
-                <div class="stat-value">M@items.Sum(x => x.QuotedTotalAmount).ToString("N0")</div>
+                <div class="stat-value">@($"M{items.Sum(x => x.QuotedTotalAmount).ToString("N0")}")"</div>
                 <div class="stat-label">Quoted On Page</div>
             </div>
         </div>
@@ -114,7 +114,7 @@
                                 </td>
 
                                 <td>
-                                    M@tender.QuotedTotalAmount.ToString("N2")
+                                    @($"M{tender.QuotedTotalAmount.ToString("N2")}")
                                 </td>
 
                                 <td>

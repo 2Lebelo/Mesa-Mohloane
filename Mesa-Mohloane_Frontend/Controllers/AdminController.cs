@@ -265,26 +265,169 @@ public sealed class AdminController : BaseController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Payments(Guid? invoiceId = null)
+    public async Task<IActionResult> Payments(Guid? invoiceId = null, Guid? paymentId = null)
     {
         SetUserViewData();
         ViewData["Title"] = "Payments";
         ViewData["ActiveNav"] = "Payments";
-        if (invoiceId.HasValue)
+
+        PaymentDto? payment = null;
+        InvoiceDto? invoice = null;
+
+        if (paymentId.HasValue && paymentId.Value != Guid.Empty)
         {
-            var payment = await _payments.GetByInvoiceAsync(invoiceId.Value);
-            return View(payment);
+            payment = await _payments.GetByIdAsync(paymentId.Value);
+
+            if (payment is not null)
+                invoice = await _invoices.GetByIdAsync(payment.InvoiceId);
         }
-        return View(null);
+        else if (invoiceId.HasValue && invoiceId.Value != Guid.Empty)
+        {
+            invoice = await _invoices.GetByIdAsync(invoiceId.Value);
+            payment = await _payments.GetByInvoiceAsync(invoiceId.Value);
+        }
+
+        var model = new PaymentReviewViewModel
+        {
+            InvoiceId = invoice?.Id ?? invoiceId,
+            Invoice = invoice,
+            Payment = payment
+        };
+
+        return View(model);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> InitiatePayment(PaymentCreateDto dto)
     {
-        var (ok, _, error) = await _payments.InitiateAsync(dto);
-        TempData[ok ? "Success" : "Error"] = ok ? "Payment initiated." : error ?? "Failed to initiate payment.";
-        return RedirectToAction(nameof(Payments), new { invoiceId = dto.InvoiceId });
+        if (dto.InvoiceId == Guid.Empty)
+        {
+            TempData["Error"] = "Invalid invoice id.";
+            return RedirectToAction(nameof(Payments));
+        }
+
+        if (dto.Amount <= 0)
+        {
+            TempData["Error"] = "Payment amount must be greater than zero.";
+            return RedirectToAction(nameof(Payments), new { invoiceId = dto.InvoiceId });
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.PaymentReference))
+        {
+            TempData["Error"] = "Payment reference is required.";
+            return RedirectToAction(nameof(Payments), new { invoiceId = dto.InvoiceId });
+        }
+
+        if (string.IsNullOrWhiteSpace(dto.Method))
+        {
+            TempData["Error"] = "Payment method is required.";
+            return RedirectToAction(nameof(Payments), new { invoiceId = dto.InvoiceId });
+        }
+
+        var cleanDto = dto with
+        {
+            PaymentReference = dto.PaymentReference.Trim(),
+            Method = dto.Method.Trim()
+        };
+
+        var (ok, payment, error) = await _payments.InitiateAsync(cleanDto);
+
+        TempData[ok ? "Success" : "Error"] = ok
+            ? "Payment initiated successfully."
+            : error ?? "Failed to initiate payment.";
+
+        return RedirectToAction(
+            nameof(Payments),
+            new
+            {
+                invoiceId = dto.InvoiceId,
+                paymentId = payment?.Id
+            });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApprovePayment(Guid id)
+    {
+        if (id == Guid.Empty)
+        {
+            TempData["Error"] = "Invalid payment id.";
+            return RedirectToAction(nameof(Payments));
+        }
+
+        var paymentBefore = await _payments.GetByIdAsync(id);
+        var (ok, payment, error) = await _payments.ApproveAsync(id);
+
+        TempData[ok ? "Success" : "Error"] = ok
+            ? "Payment approved successfully."
+            : error ?? "Failed to approve payment.";
+
+        return RedirectToAction(
+            nameof(Payments),
+            new
+            {
+                invoiceId = payment?.InvoiceId ?? paymentBefore?.InvoiceId,
+                paymentId = id
+            });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DisbursePayment(Guid id)
+    {
+        if (id == Guid.Empty)
+        {
+            TempData["Error"] = "Invalid payment id.";
+            return RedirectToAction(nameof(Payments));
+        }
+
+        var paymentBefore = await _payments.GetByIdAsync(id);
+        var (ok, payment, error) = await _payments.DisburseAsync(id);
+
+        TempData[ok ? "Success" : "Error"] = ok
+            ? "Payment disbursed successfully. Related invoice, assignment, and incident were closed automatically."
+            : error ?? "Failed to disburse payment.";
+
+        return RedirectToAction(
+            nameof(Payments),
+            new
+            {
+                invoiceId = payment?.InvoiceId ?? paymentBefore?.InvoiceId,
+                paymentId = id
+            });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> FailPayment(Guid id, string reason)
+    {
+        if (id == Guid.Empty)
+        {
+            TempData["Error"] = "Invalid payment id.";
+            return RedirectToAction(nameof(Payments));
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            TempData["Error"] = "Failure reason is required.";
+            return RedirectToAction(nameof(Payments), new { paymentId = id });
+        }
+
+        var paymentBefore = await _payments.GetByIdAsync(id);
+        var (ok, payment, error) = await _payments.MarkFailedAsync(id, reason);
+
+        TempData[ok ? "Success" : "Error"] = ok
+            ? "Payment marked as failed."
+            : error ?? "Failed to mark payment as failed.";
+
+        return RedirectToAction(
+            nameof(Payments),
+            new
+            {
+                invoiceId = payment?.InvoiceId ?? paymentBefore?.InvoiceId,
+                paymentId = id
+            });
     }
 
     [HttpGet]

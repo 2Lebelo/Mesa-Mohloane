@@ -32,7 +32,7 @@
     }
 
     <div class="grid grid-4 mb-3">
-        <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">M@Model.QuotedTotalAmount.ToString("N2")</div><div class="stat-label">Quoted Total</div></div></div>
+        <div class="stat-card"><div class="stat-icon blue"><i class="fa-solid fa-coins"></i></div><div><div class="stat-value">@($"M{Model.QuotedTotalAmount.ToString("N2")}")"</div><div class="stat-label">Quoted Total</div></div></div>
         <div class="stat-card"><div class="stat-icon green"><i class="fa-solid fa-calendar-day"></i></div><div><div class="stat-value">@Model.EstimatedTimelineDays</div><div class="stat-label">Timeline Days</div></div></div>
         <div class="stat-card"><div class="stat-icon amber"><i class="fa-solid fa-ranking-star"></i></div><div><div class="stat-value">@(Model.RankPosition <= 0 ? "—" : Model.RankPosition)</div><div class="stat-label">Rank</div></div></div>
         <div class="stat-card"><div class="stat-icon purple"><i class="fa-solid fa-chart-line"></i></div><div><div class="stat-value">@Model.WeightedScore.ToString("0.00")</div><div class="stat-label">Weighted Score</div></div></div>
@@ -83,8 +83,8 @@
                             <td>@item.Description</td>
                             <td>@item.Quantity.ToString("N2")</td>
                             <td>@item.UnitOfMeasure</td>
-                            <td>M@item.UnitPrice.ToString("N2")</td>
-                            <td><strong>M@item.LineTotal.ToString("N2")</strong></td>
+                            <td>@($"M{item.UnitPrice.ToString("N2")}")</td>
+                            <td><strong>@($"{item.LineTotal.ToString("N2")}")</strong></td>
                         </tr>
                     }
                 </tbody>

@@ -6,7 +6,7 @@ namespace Mesa_Mohloane_Backend.Controllers;
 
 [ApiController]
 [Route("api/auditlogs")]
-[Authorize(Roles = "Administrator,Auditor")]
+[Authorize(Roles = "Administrator,Auditor,Inspector")]
 public class AuditLogsController(IAuditLogService auditLogs) : ControllerBase
 {
     private readonly IAuditLogService _auditLogs = auditLogs;

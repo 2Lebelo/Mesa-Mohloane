@@ -4,10 +4,32 @@
     ViewData["Title"] = "Invoice Review";
     ViewData["ActiveNav"] = "Invoices";
 }
+
 <div class="page-header">
     <h1 class="page-title">Invoice @Model.InvoiceNumber</h1>
-    <div class="page-breadcrumb"><a href="/Admin/Invoices">Invoices</a><i class="fa-solid fa-chevron-right"></i><span>Review</span></div>
+    <div class="page-breadcrumb">
+        <a href="/Admin/Invoices">Invoices</a>
+        <i class="fa-solid fa-chevron-right"></i>
+        <span>Review</span>
+    </div>
 </div>
+
+@if (TempData["Success"] is not null)
+{
+    <div class="alert alert-success">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>@TempData["Success"]</span>
+    </div>
+}
+
+@if (TempData["Error"] is not null)
+{
+    <div class="alert alert-danger">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>@TempData["Error"]</span>
+    </div>
+}
+
 <div class="card">
     <div class="card-body">
         <p><strong>Original Quote:</strong> @Model.OriginalQuotedAmount.ToString("C")</p>
@@ -15,6 +37,7 @@
         <p><strong>Variance:</strong> @Model.VariancePercentage.ToString("F1")%</p>
         <p><strong>Status:</strong> @Model.Status</p>
     </div>
+
     <div class="card-footer" style="display:flex;gap:.5rem;flex-wrap:wrap">
         <form asp-action="ValidateInvoice" method="post" style="display:flex;gap:.4rem;flex-wrap:wrap">
             @Html.AntiForgeryToken()
@@ -22,17 +45,20 @@
             <input class="form-control-light" name="remarks" placeholder="Validation remarks" style="max-width:220px" />
             <button class="btn btn-secondary btn-sm" type="submit">Validate</button>
         </form>
+
         <form asp-action="ApproveInvoice" method="post">
             @Html.AntiForgeryToken()
             <input type="hidden" name="id" value="@Model.Id" />
             <button class="btn btn-primary btn-sm" type="submit">Approve</button>
         </form>
+
         <form asp-action="RejectInvoice" method="post" style="display:flex;gap:.4rem;flex-wrap:wrap">
             @Html.AntiForgeryToken()
             <input type="hidden" name="id" value="@Model.Id" />
             <input class="form-control-light" name="reason" placeholder="Rejection reason" style="max-width:220px" />
             <button class="btn btn-danger btn-sm" type="submit">Reject</button>
         </form>
+
         <a class="btn btn-secondary btn-sm" href="/Admin/Payments?invoiceId=@Model.Id">View Payment</a>
     </div>
 </div>
