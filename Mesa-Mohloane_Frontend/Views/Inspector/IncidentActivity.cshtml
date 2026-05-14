@@ -1,0 +1,87 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.AuditLogDto>
+
+@{
+    Layout = "~/Views/Shared/_InspectorShell.cshtml";
+    ViewData["Title"] = "Incident Activity";
+    ViewData["ActiveNav"] = "IncidentActivity";
+}
+
+@section Content {
+    <div class="page-header">
+        <h1 class="page-title">Incident Activity</h1>
+        <div class="page-breadcrumb">
+            <a href="/Inspector/Dashboard">Home</a>
+            <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+            <span>Incident Activity</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Incident Audit Trail</div>
+                <div class="card-subtitle">All tracked incident workflow actions</div>
+            </div>
+
+            <a href="/Inspector/AuditLogs" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-shield-halved"></i>
+                View all audit logs
+            </a>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Entity</th>
+                        <th>Entity ID</th>
+                        <th>Actor</th>
+                        <th>Notes</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model?.Items?.Any() == true)
+                    {
+                        foreach (var log in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge badge-info badge-dot">
+                                        @log.ActionType
+                                    </span>
+                                </td>
+                                <td>@log.EntityName</td>
+                                <td>
+                                    <span style="font-family:var(--font-mono);font-size:.78rem">
+                                        @(log.EntityId?.ToString() ?? "—")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span style="font-family:var(--font-mono);font-size:.78rem">
+                                        @(log.ActorUserId?.ToString() ?? "System")
+                                    </span>
+                                </td>
+                                <td>@(string.IsNullOrWhiteSpace(log.Notes) ? "—" : log.Notes)</td>
+                                <td>@log.ActionAt.ToString("dd MMM yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-clipboard-list"></i>
+                                    <h4>No incident activity found</h4>
+                                    <p>Incident workflow actions will appear here once recorded.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

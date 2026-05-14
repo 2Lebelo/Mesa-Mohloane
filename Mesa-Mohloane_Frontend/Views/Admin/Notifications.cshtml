@@ -1,0 +1,47 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.NotificationDto>
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    ViewData["Title"] = "Notifications";
+    ViewData["ActiveNav"] = "Notifications";
+}
+<div class="page-header">
+    <h1 class="page-title">Notifications</h1>
+    <div class="page-breadcrumb"><a href="#">Home</a><i class="fa-solid fa-chevron-right"></i><span>Notifications</span></div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <div>
+            <div class="card-title">In-app Notifications</div>
+            <div class="card-subtitle">Latest updates</div>
+        </div>
+        <form asp-action="MarkAllNotificationsRead" method="post">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-secondary btn-sm" type="submit">Mark all read</button>
+        </form>
+    </div>
+    <div class="card-body">
+        @if (Model?.Items?.Any() == true)
+        {
+            foreach (var note in Model.Items)
+            {
+                <div style="padding:.6rem 0;border-bottom:1px solid var(--border)">
+                    <div class="fw-600">@note.Title</div>
+                    <div class="text-muted text-sm">@note.Message</div>
+                    <div class="text-muted text-sm">@note.SentAt.ToString("dd MMM yyyy HH:mm")</div>
+                    @if (!note.IsRead)
+                    {
+                        <form asp-action="MarkNotificationRead" method="post" style="margin-top:.4rem">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@note.Id" />
+                            <button class="btn btn-secondary btn-sm" type="submit">Mark read</button>
+                        </form>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">No notifications.</div>
+        }
+    </div>
+</div>

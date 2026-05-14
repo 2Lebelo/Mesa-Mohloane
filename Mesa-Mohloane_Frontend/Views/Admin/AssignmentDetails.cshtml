@@ -1,0 +1,128 @@
+﻿@model Mesa_Mohloane_Frontend.Dtos.AssignmentDto
+
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    ViewData["Title"] = "Assignment Details";
+    ViewData["ActiveNav"] = "Assignments";
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Assignment Details</h1>
+            <div class="page-breadcrumb">
+                <a asp-controller="Admin" asp-action="Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <a asp-controller="Admin" asp-action="Assignments">Assignments</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Details</span>
+            </div>
+        </div>
+
+        <a asp-controller="Admin" asp-action="Assignments" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+        </a>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success"><i class="fa-solid fa-check-circle"></i><span>@TempData["Success"]</span></div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i><span>@TempData["Error"]</span></div>
+    }
+
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Assignment Information</div>
+                    <div class="card-subtitle">Contractor job execution record</div>
+                </div>
+                @AssignmentStatusBadge(Model.Status)
+            </div>
+
+            <div class="card-body">
+                <div style="display:grid;gap:1rem">
+                    <div><div class="text-sm text-muted">Assignment ID</div><div style="font-family:var(--font-mono);font-size:.8rem">@Model.Id</div></div>
+                    <div><div class="text-sm text-muted">Incident ID</div><div style="font-family:var(--font-mono);font-size:.8rem">@Model.IncidentId</div></div>
+                    <div><div class="text-sm text-muted">Tender Application ID</div><div style="font-family:var(--font-mono);font-size:.8rem">@Model.TenderApplicationId</div></div>
+                    <div><div class="text-sm text-muted">Contractor ID</div><div style="font-family:var(--font-mono);font-size:.8rem">@Model.ContractorId</div></div>
+                    <div><div class="text-sm text-muted">Assigned By Admin</div><div style="font-family:var(--font-mono);font-size:.8rem">@Model.AssignedByAdminId</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Workflow Timeline</div>
+                    <div class="card-subtitle">Assignment progress and approvals</div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div style="display:grid;gap:1rem">
+                    <div><div class="text-sm text-muted">Assigned At</div><div class="fw-600">@Model.AssignedAt.ToString("dd MMM yyyy HH:mm")</div></div>
+                    <div><div class="text-sm text-muted">Started At</div><div class="fw-600">@(Model.StartedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div></div>
+                    <div><div class="text-sm text-muted">Completed At</div><div class="fw-600">@(Model.CompletedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div></div>
+                    <div><div class="text-sm text-muted">Citizen Acknowledged At</div><div class="fw-600">@(Model.CitizenAcknowledgedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div></div>
+                    <div><div class="text-sm text-muted">Admin Approved At</div><div class="fw-600">@(Model.AdminApprovedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</div></div>
+                </div>
+            </div>
+
+            <div class="card-footer">
+                @if (Model.Status == 4)
+                {
+                    <form asp-controller="Admin"
+                          asp-action="ApproveAssignment"
+                          method="post"
+                          onsubmit="return confirm('Approve this completed assignment?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-check"></i>
+                            Approve Completion
+                        </button>
+                    </form>
+                }
+                else if (Model.Status >= 5)
+                {
+                    <div class="alert alert-success" style="margin-bottom:0">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>This assignment has already been approved.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info" style="margin-bottom:0">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Approval becomes available after citizen acknowledgement.</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@functions {
+    private static Microsoft.AspNetCore.Html.IHtmlContent AssignmentStatusBadge(int status)
+    {
+        var html = status switch
+        {
+            1 => "<span class=\"badge badge-purple badge-dot\">Assigned</span>",
+            2 => "<span class=\"badge badge-info badge-dot\">Started</span>",
+            3 => "<span class=\"badge badge-success badge-dot\">Completed</span>",
+            4 => "<span class=\"badge badge-warning badge-dot\">Awaiting Approval</span>",
+            5 => "<span class=\"badge badge-primary badge-dot\">Approved</span>",
+            6 => "<span class=\"badge badge-gray badge-dot\">Closed</span>",
+            _ => $"<span class=\"badge badge-gray\">{status}</span>"
+        };
+
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+}

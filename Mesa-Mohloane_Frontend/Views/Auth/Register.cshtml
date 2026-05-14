@@ -1,0 +1,568 @@
+﻿@model Mesa_Mohloane_Frontend.Dtos.RegisterRequestDto
+@{
+    Layout = null;
+    var roles = ViewData["Roles"] as List<Mesa_Mohloane_Frontend.Dtos.RoleDto> ?? new();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account — Mesa Mohloane</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+
+    <style>
+        :root {
+            --primary: #1473ff;
+            --primary-dark: #071a4d;
+            --primary-soft: #eaf2ff;
+            --text-dark: #071a4d;
+            --text-muted: #64748b;
+            --border: #e5e7eb;
+            --white: #ffffff;
+            --danger: #991b1b;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            background: #f4f7ff;
+        }
+
+        .auth-page {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 48% 52%;
+            background: var(--white);
+        }
+
+        .auth-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 96px 72px 48px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .auth-brand {
+            position: absolute;
+            top: 36px;
+            left: 72px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--primary-dark);
+            font-weight: 900;
+            font-size: 22px;
+            text-decoration: none;
+        }
+
+            .auth-brand i {
+                color: var(--primary);
+                font-size: 26px;
+            }
+
+        .auth-card {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .auth-title {
+            color: var(--primary-dark);
+            font-size: 42px;
+            line-height: 1.1;
+            font-weight: 900;
+            letter-spacing: -1.5px;
+            margin-bottom: 12px;
+        }
+
+        .auth-sub {
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 30px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            color: var(--primary-dark);
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            min-height: 52px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 16px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.2s ease;
+            box-sizing: border-box;
+        }
+
+            .form-control:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 4px rgba(20, 115, 255, 0.12);
+            }
+
+        .role-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .role-option {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            cursor: pointer;
+            background: #fff;
+            transition: .2s ease;
+        }
+
+            .role-option:hover,
+            .role-option:has(input:checked) {
+                border-color: var(--primary);
+                background: var(--primary-soft);
+                box-shadow: 0 0 0 4px rgba(20, 115, 255, .10);
+            }
+
+            .role-option input {
+                display: none;
+            }
+
+        .role-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--primary);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .role-option strong {
+            display: block;
+            color: var(--primary-dark);
+            font-size: 14px;
+        }
+
+        .role-option small {
+            display: block;
+            color: var(--text-muted);
+            font-size: 12px;
+            margin-top: 2px;
+            line-height: 1.35;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            color: var(--white);
+            cursor: pointer;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .btn-lg {
+            height: 54px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 15px;
+        }
+
+        .btn-primary:hover {
+            background: #005de0;
+        }
+
+        .auth-visual {
+            background: linear-gradient(rgba(7, 26, 77, 0.88), rgba(7, 26, 77, 0.88)), url('/images/Hero_Image.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 72px;
+            color: var(--white);
+        }
+
+        .auth-visual-content {
+            max-width: 520px;
+            text-align: center;
+        }
+
+        .auth-visual-icon {
+            width: 86px;
+            height: 86px;
+            border-radius: 24px;
+            background: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 26px;
+            box-shadow: 0 20px 45px rgba(20, 115, 255, 0.35);
+        }
+
+            .auth-visual-icon i {
+                font-size: 36px;
+            }
+
+        .auth-visual h2 {
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 14px;
+        }
+
+        .auth-visual p {
+            color: #cbd5e1;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .alert-danger {
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+            color: var(--danger);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .text-danger {
+            display: block;
+            margin-top: 6px;
+            color: var(--danger);
+            font-size: 13px;
+        }
+
+        .auth-link {
+            color: var(--primary);
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        @@media (max-width: 992px) {
+            .auth-page {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-visual {
+                display: none;
+            }
+
+            .auth-panel {
+                padding: 120px 28px 48px;
+            }
+
+            .auth-brand {
+                left: 28px;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .form-grid,
+            .role-options {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .role-options {
+                gap: 12px;
+            }
+
+            .auth-title {
+                font-size: 34px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-page">
+        <div class="auth-panel">
+            <a href="/" class="auth-brand">
+                <i class="fa-solid fa-city"></i>
+                Mesa Mohloane
+            </a>
+
+            <div class="auth-card">
+                <h1 class="auth-title">Create your account</h1>
+                <p class="auth-sub">Register as a citizen or contractor to access Mesa Mohloane services.</p>
+
+                @if (ViewData["Error"] is not null)
+                {
+                    <div id="error-alert" class="alert-danger">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="error-msg">@(ViewData["Error"] as string ?? "")</span>
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div asp-validation-summary="ModelOnly" class="alert-danger"></div>
+                }
+
+                <form method="post" asp-controller="Auth" asp-action="Register" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        <label class="form-label">Register as</label>
+
+                        @if (roles.Any())
+                        {
+                            <div class="role-options">
+                                @foreach (var role in roles)
+                                {
+                                    var isCitizen = role.Name.Equals("Citizen", StringComparison.OrdinalIgnoreCase);
+                                    var isChecked = Model.RoleId == role.Id;
+
+                                    <label class="role-option">
+                                        <input type="radio"
+                                               name="RoleId"
+                                               value="@role.Id"
+                                               @(isChecked ? "checked" : "")
+                                               required />
+
+                                        <span class="role-icon">
+                                            @if (isCitizen)
+                                            {
+                                                <i class="fa-solid fa-user"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa-solid fa-helmet-safety"></i>
+                                            }
+                                    </span>
+
+                                    <span>
+                                        <strong>@role.Name</strong>
+                                        <small>
+                                            @(isCitizen
+                                                                                    ? "Report infrastructure incidents"
+                                                                                    : "Bid for verified infrastructure jobs")
+                                            </small>
+                                        </span>
+                                    </label>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert-danger">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span>Citizen and Contractor roles could not be loaded. Please try again later.</span>
+                            </div>
+                        }
+
+                        <span asp-validation-for="RoleId" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label asp-for="FirstName" class="form-label">First name</label>
+                            <input asp-for="FirstName"
+                                   class="form-control"
+                                   placeholder="Thabo"
+                                   autocomplete="given-name" />
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="LastName" class="form-label">Last name</label>
+                            <input asp-for="LastName"
+                                   class="form-control"
+                                   placeholder="Mokoena"
+                                   autocomplete="family-name" />
+                            <span asp-validation-for="LastName" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Email" class="form-label">Email address</label>
+                        <input asp-for="Email"
+                               type="email"
+                               class="form-control"
+                               placeholder="you@example.com"
+                               autocomplete="email" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="PhoneNumber" class="form-label">Phone number</label>
+                        <input asp-for="PhoneNumber"
+                               type="tel"
+                               class="form-control"
+                               placeholder="+26650000000"
+                               autocomplete="tel" />
+                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Password" class="form-label">Password</label>
+
+                        <div style="position:relative">
+                            <input asp-for="Password"
+                                   type="password"
+                                   id="password"
+                                   class="form-control"
+                                   placeholder="Min. 8 characters"
+                                   autocomplete="new-password"
+                                   style="padding-right:2.75rem" />
+
+                            <button type="button"
+                                    onclick="togglePw('password','pw-icon')"
+                                    aria-label="Toggle password visibility"
+                                    style="position:absolute;right:.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer">
+                                <i class="fa-solid fa-eye" id="pw-icon"></i>
+                            </button>
+                        </div>
+
+                        <span asp-validation-for="Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Confirm password</label>
+
+                        <div style="position:relative">
+                            <input type="password"
+                                   id="confirm"
+                                   class="form-control"
+                                   placeholder="Repeat password"
+                                   autocomplete="new-password"
+                                   style="padding-right:2.75rem" />
+
+                            <button type="button"
+                                    onclick="togglePw('confirm','confirm-icon')"
+                                    aria-label="Toggle confirm password visibility"
+                                    style="position:absolute;right:.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer">
+                                <i class="fa-solid fa-eye" id="confirm-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-full btn-lg" @(roles.Any() ? "" : "disabled")>
+                        Create Account
+                    </button>
+                </form>
+
+                <p style="text-align:center;margin-top:1.5rem;font-size:.9rem;color:#64748b">
+                    Already have an account?
+                    <a href="/Auth/Login" class="auth-link">Sign in</a>
+                </p>
+            </div>
+        </div>
+
+        <div class="auth-visual">
+            <div class="auth-visual-content">
+                <div class="auth-visual-icon">
+                    <i class="fa-solid fa-network-wired"></i>
+                </div>
+
+                <h2>Build Connected Communities</h2>
+                <p>
+                    Register to report infrastructure issues, submit contractor tenders,
+                    and help improve service delivery across Lesotho.
+                </p>
+
+                <div style="margin-top:2.5rem;display:flex;flex-direction:column;gap:.85rem;max-width:330px;margin-left:auto;margin-right:auto;text-align:left">
+                    <div style="display:flex;align-items:center;gap:.75rem;color:#cbd5e1;font-size:.9rem">
+                        <i class="fa-solid fa-check" style="color:#1473ff;width:16px"></i>
+                        Citizen incident reporting
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:.75rem;color:#cbd5e1;font-size:.9rem">
+                        <i class="fa-solid fa-check" style="color:#1473ff;width:16px"></i>
+                        Contractor tender participation
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:.75rem;color:#cbd5e1;font-size:.9rem">
+                        <i class="fa-solid fa-check" style="color:#1473ff;width:16px"></i>
+                        Secure role-based access
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:.75rem;color:#cbd5e1;font-size:.9rem">
+                        <i class="fa-solid fa-check" style="color:#1473ff;width:16px"></i>
+                        Smart infrastructure workflow
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        function togglePw(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+
+            const isText = input.type === 'text';
+            input.type = isText ? 'password' : 'text';
+            icon.className = isText ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+        }
+
+        document.querySelector('form')?.addEventListener('submit', (event) => {
+            const password = document.getElementById('password')?.value || '';
+            const confirm = document.getElementById('confirm')?.value || '';
+            const role = document.querySelector('input[name="RoleId"]:checked');
+
+            if (!role) {
+                event.preventDefault();
+                showRegisterError('Please choose whether you are registering as a Citizen or Contractor.');
+                return;
+            }
+
+            if (password !== confirm) {
+                event.preventDefault();
+                showRegisterError('Passwords do not match.');
+            }
+        });
+
+        function showRegisterError(message) {
+            let alertBox = document.getElementById('error-alert');
+
+            if (!alertBox) {
+                alertBox = document.createElement('div');
+                alertBox.id = 'error-alert';
+                alertBox.className = 'alert-danger';
+                alertBox.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i> <span id="error-msg"></span>';
+
+                const form = document.querySelector('form');
+                form.parentElement.insertBefore(alertBox, form);
+            }
+
+            document.getElementById('error-msg').textContent = message;
+        }
+    </script>
+</body>
+</html>

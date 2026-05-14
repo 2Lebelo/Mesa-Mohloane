@@ -1,0 +1,56 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.UserListItemDto>
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    ViewData["Title"] = "Users";
+    ViewData["ActiveNav"] = "Users";
+}
+<div class="page-header">
+    <h1 class="page-title">Users</h1>
+    <div class="page-breadcrumb"><a href="#">Home</a><i class="fa-solid fa-chevron-right"></i><span>Users</span></div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <div>
+            <div class="card-title">User Management</div>
+            <div class="card-subtitle">Manage access and activation</div>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model?.Items?.Any() == true)
+            {
+                foreach (var user in Model.Items)
+                {
+                    <tr>
+                        <td>@user.FirstName @user.LastName</td>
+                        <td>@user.Email</td>
+                        <td>@user.RoleName</td>
+                        <td>@(user.IsActive ? "Active" : "Inactive")</td>
+                        <td>
+                            <form asp-action="ToggleUser" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@user.Id" />
+                                <button class="btn btn-secondary btn-sm" type="submit">Toggle</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="5"><div class="empty-state">No users found</div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

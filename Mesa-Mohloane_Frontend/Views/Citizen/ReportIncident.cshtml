@@ -1,0 +1,69 @@
+@{
+    Layout = "~/Views/Shared/_CitizenShell.cshtml";
+    ViewData["Title"] = "Report Incident";
+    ViewData["ActiveNav"] = "ReportIncident";
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+        <div>
+            <h1 class="page-title">Report Infrastructure Incident</h1>
+            <div class="page-breadcrumb"><a href="/Citizen/Dashboard">Home</a><i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i><span>Report Incident</span></div>
+        </div>
+        <a href="/Citizen/MyIncidents" class="btn btn-secondary btn-sm"><i class="fa-solid fa-list"></i> My Incidents</a>
+    </div>
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger"><i class="fa-solid fa-circle-exclamation"></i><span>@TempData["Error"]</span></div>
+    }
+
+    <form asp-action="ReportIncident" asp-controller="Citizen" method="post" enctype="multipart/form-data" novalidate>
+        @Html.AntiForgeryToken()
+        <div class="grid grid-2-1">
+            <div class="card">
+                <div class="card-header">
+                    <div><div class="card-title">Incident Information</div><div class="card-subtitle">Provide clear details for administrator verification</div></div>
+                </div>
+                <div class="card-body">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <div class="form-group"><label class="form-label" for="title">Title</label><input class="form-control-light" id="title" name="title" maxlength="120" placeholder="Example: Burst water pipe near Main South 1" required /></div>
+                    <div class="form-group"><label class="form-label" for="description">Description</label><textarea class="form-control-light" id="description" name="description" rows="6" placeholder="Describe what happened, severity, and safety concerns." required></textarea><span class="text-sm text-muted">Minimum recommended length: 20 characters.</span></div>
+                    <div class="form-group"><label class="form-label" for="locationName">Location name</label><input class="form-control-light" id="locationName" name="locationName" placeholder="Example: Ha Thetsane, Maseru" required /></div>
+                    <div class="grid grid-2">
+                        <div class="form-group"><label class="form-label" for="latitude">Latitude</label><input class="form-control-light" id="latitude" name="latitude" type="number" step="0.000001" min="-90" max="90" placeholder="-29.315000" required /></div>
+                        <div class="form-group"><label class="form-label" for="longitude">Longitude</label><input class="form-control-light" id="longitude" name="longitude" type="number" step="0.000001" min="-180" max="180" placeholder="27.486900" required /></div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="useCurrentLocation()"><i class="fa-solid fa-location-crosshairs"></i> Use my current location</button>
+                    <div class="divider"></div>
+                    <div class="form-group"><label class="form-label" for="photos">Incident photos</label><input class="form-control-light" id="photos" name="photos" type="file" accept="image/*" multiple onchange="previewPhotos(this)" /><span class="text-sm text-muted">Optional. Upload clear images. Maximum recommended size: 5MB per image.</span></div>
+                    <div id="photo-preview" class="grid grid-3" style="display:none;margin-top:1rem"></div>
+                </div>
+                <div class="card-footer" style="display:flex;gap:.75rem;justify-content:flex-end;flex-wrap:wrap"><a href="/Citizen/MyIncidents" class="btn btn-secondary">Cancel</a><button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Submit Incident</button></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:1.2rem">
+                <div class="card"><div class="card-header"><div><div class="card-title">Reporting Guidelines</div><div class="card-subtitle">Help admins verify quickly</div></div></div><div class="card-body"><div class="alert alert-info"><i class="fa-solid fa-circle-info"></i><span>Submit accurate location details and photos where possible.</span></div><div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation"></i><span>Only pending incidents can be edited or deleted after submission.</span></div></div></div>
+            </div>
+        </div>
+    </form>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function useCurrentLocation() {
+            if (!navigator.geolocation) { showToast('Geolocation is not supported by this browser.', 'warning'); return; }
+            navigator.geolocation.getCurrentPosition(p => {
+                document.getElementById('latitude').value = p.coords.latitude.toFixed(6);
+                document.getElementById('longitude').value = p.coords.longitude.toFixed(6);
+                showToast('Current location captured.', 'success');
+            }, () => showToast('Unable to access your current location.', 'error'), { enableHighAccuracy: true, timeout: 10000 });
+        }
+        function previewPhotos(input) {
+            const preview = document.getElementById('photo-preview'); preview.innerHTML = '';
+            const files = Array.from(input.files || []); if (!files.length) { preview.style.display = 'none'; return; }
+            preview.style.display = 'grid';
+            files.forEach(file => { if (!file.type.startsWith('image/')) return; const reader = new FileReader(); reader.onload = e => preview.insertAdjacentHTML('beforeend', `<div class="card" style="overflow:hidden"><img src="${e.target.result}" alt="${file.name}" style="width:100%;height:130px;object-fit:cover;display:block" /><div style="padding:.65rem;font-size:.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(file.name)}</div></div>`); reader.readAsDataURL(file); });
+        }
+    </script>
+}

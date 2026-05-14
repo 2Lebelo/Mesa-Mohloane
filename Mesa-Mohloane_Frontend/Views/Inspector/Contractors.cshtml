@@ -1,0 +1,72 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.ContractorProfileDto>
+@{
+    Layout = "~/Views/Shared/_InspectorShell.cshtml";
+    ViewData["Title"] = "Contractor Profiles";
+    ViewData["ActiveNav"] = "Contractors";
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Contractor Profiles</h1>
+            <div class="page-breadcrumb">
+                <a href="/Inspector/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Contractors</span>
+            </div>
+        </div>
+        <a href="/Inspector/Contractors" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-right"></i> Refresh</a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Contractor Monitoring</div>
+                <div class="card-subtitle">Profiles visible to Inspector/Auditor for transparency monitoring</div>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Registration</th>
+                        <th>Coverage</th>
+                        <th>Rating</th>
+                        <th>Performance</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model?.Items?.Any() == true)
+                    {
+                        foreach (var c in Model.Items)
+                        {
+                            <tr>
+                                <td><strong>@c.CompanyName</strong><div class="text-sm text-muted">@c.UserId</div></td>
+                                <td style="font-family:var(--font-mono);font-size:.78rem">@c.RegistrationNumber</td>
+                                <td>@c.CoverageArea</td>
+                                <td><span style="color:var(--warning);font-weight:700">★</span> @c.AverageRating.ToString("0.0")</td>
+                                <td>@c.CompletedJobsCount completed · @c.LateCompletionCount late</td>
+                                <td>
+                                    @if (c.IsApproved)
+                                    {
+                                        <span class="badge badge-success badge-dot">Approved</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-warning badge-dot">Pending</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-helmet-safety"></i><h4>No contractor profiles found</h4></div></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

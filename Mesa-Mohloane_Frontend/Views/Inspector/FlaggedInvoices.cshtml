@@ -1,0 +1,34 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.InvoiceListDto>
+@{
+    Layout = "~/Views/Shared/_InspectorShell.cshtml";
+    ViewData["Title"] = "Flagged Invoices";
+    ViewData["ActiveNav"] = "FlaggedInvoices";
+}
+<div class='page-header'><h1 class='page-title'>Flagged Invoices</h1><div class='page-breadcrumb'><a href='#'>Home</a><span>List</span></div></div>
+<div class='card'>
+    <div class='card-header'><div><div class='card-title'>Flagged Invoices</div><div class='card-subtitle'>Variance above threshold</div></div></div>
+    <div class='table-wrap'>
+        <table class='table'>
+            <thead><tr><th>#</th><th>Amount</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+            <tbody>
+            @if (Model?.Items?.Any() == true)
+            {
+                foreach (var invoice in Model.Items)
+                {
+                    <tr>
+                        <td>@invoice.InvoiceNumber</td>
+                        <td>@invoice.FinalInvoiceAmount.ToString("C")</td>
+                        <td><span class='badge badge-danger'>@invoice.Status</span></td>
+                        <td>@invoice.SubmittedAt.ToString("dd MMM yyyy")</td>
+                        <td><a class='btn btn-secondary btn-sm' href='/Inspector/InvoiceDetails?id=@invoice.Id'>Review</a></td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan=5><div class=empty-state>No flagged invoices</div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,44 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.IncidentListItemDto>
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "Open Incidents";
+    ViewData["ActiveNav"] = "OpenIncidents";
+    var search = ViewData["Search"] as string;
+}
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap"><div><h1 class="page-title">Open Incidents</h1><div class="page-breadcrumb"><a href="/Contractor/Dashboard">Home</a><i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i><span>Available Bids</span></div></div></div>
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" asp-action="OpenIncidents" asp-controller="Contractor" style="display:flex;gap:.75rem;align-items:end;flex-wrap:wrap">
+                <div class="form-group" style="margin:0;flex:1;min-width:240px">
+                    <label class="form-label">Search open incidents</label>
+                    <input class="form-control-light" name="search" value="@search" placeholder="Search title or location..." />
+                </div>
+                <button class="btn btn-primary" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+                <a href="/Contractor/OpenIncidents" class="btn btn-secondary">Reset</a>
+            </form>
+            </div>
+            </div>
+    <div class="card">
+        <div class="card-header"><div><div class="card-title">Published Incidents</div><div class="card-subtitle">Only administrator-published incidents are listed here</div></div><span class="badge badge-primary">@(Model?.TotalCount ?? 0) open</span></div><div class="table-wrap">
+            <table class="table">
+                <thead><tr><th>Incident #</th><th>Title</th><th>Location</th><th>Status</th><th>Reported</th><th class="actions">Actions</th></tr></thead>
+                <tbody>
+                    @if (Model?.Items?.Any() == true)
+                    {
+                        foreach (var incident in Model.Items)
+                        {
+                            <tr><td style="font-family:var(--font-mono);font-size:.78rem;color:var(--accent);font-weight:600">@incident.IncidentNumber</td><td class="fw-600">@incident.Title</td><td class="text-sm text-muted">@incident.LocationName</td><td><span class="badge badge-primary badge-dot">Published</span></td><td class="text-sm text-muted">@incident.ReportedAt.ToString("dd MMM yyyy")</td><td class="actions"><a href="/Contractor/IncidentDetails?id=@incident.Id" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye"></i> View</a><a href="/Contractor/SubmitTender?incidentId=@incident.Id" class="btn btn-primary btn-sm"><i class="fa-solid fa-file-signature"></i> Bid</a></td></tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-file-contract"></i><h4>No open incidents</h4><p>Published incidents will appear here when administrators open bidding.</p></div></td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>@if (Model is not null && Model.TotalPages > 1) {
+        <div class="pagination"><div class="pagination-info">Page @Model.Page of @Model.TotalPages • @Model.TotalCount records</div><div class="pagination-nav"><a class="page-btn" href="/Contractor/OpenIncidents?page=@Math.Max(1, Model.Page - 1)&search=@search"><i class="fa-solid fa-chevron-left"></i></a><a class="page-btn" href="/Contractor/OpenIncidents?page=@Math.Min(Model.TotalPages, Model.Page + 1)&search=@search"><i class="fa-solid fa-chevron-right"></i></a></div></div>
+    }
+</div>
+}

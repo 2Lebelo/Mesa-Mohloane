@@ -1,0 +1,152 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.AuditLogDto>
+
+@{
+    Layout = "~/Views/Shared/_InspectorShell.cshtml";
+    ViewData["Title"] = "Tender Activity";
+    ViewData["ActiveNav"] = "TenderActivity";
+
+    var items = Model?.Items ?? Array.Empty<Mesa_Mohloane_Frontend.Dtos.AuditLogDto>();
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var totalCount = Model?.TotalCount ?? 0;
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Tender Activity</h1>
+            <div class="page-breadcrumb">
+                <a href="/Inspector/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Tender Activity</span>
+            </div>
+        </div>
+
+        <a asp-controller="Inspector"
+           asp-action="AuditLogs"
+           asp-route-entityName="TenderApplication"
+           class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-shield-halved"></i>
+            Full Audit Logs
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Tender Audit Trail</div>
+                <div class="card-subtitle">Tender submissions, evaluations, withdrawals, and assignment actions</div>
+            </div>
+
+            <div class="text-sm text-muted">
+                @totalCount records
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Entity</th>
+                        <th>Entity ID</th>
+                        <th>Actor</th>
+                        <th>Notes</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (items.Any())
+                    {
+                        foreach (var log in items)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge badge-info badge-dot">
+                                        @log.ActionType
+                                    </span>
+                                </td>
+
+                                <td>@log.EntityName</td>
+
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @(log.EntityId?.ToString() ?? "—")
+                                </td>
+
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @(log.ActorUserId?.ToString() ?? "System")
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(log.Notes) ? "—" : log.Notes)
+                                </td>
+
+                                <td>
+                                    @log.ActionAt.ToString("dd MMM yyyy HH:mm")
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-file-contract"></i>
+                                    <h4>No tender activity found</h4>
+                                    <p>Audit records will appear here after contractors submit or admins evaluate tenders.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="pagination">
+                <div class="pagination-info">
+                    Page @currentPage of @totalPages — @totalCount records
+                </div>
+
+                <div class="pagination-nav">
+                    @if (currentPage > 1)
+                    {
+                        <a asp-controller="Inspector"
+                           asp-action="TenderActivity"
+                           asp-route-page="@(currentPage - 1)"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                    }
+
+                    <span class="page-btn active">@currentPage</span>
+
+                    @if (currentPage < totalPages)
+                    {
+                        <a asp-controller="Inspector"
+                           asp-action="TenderActivity"
+                           asp-route-page="@(currentPage + 1)"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

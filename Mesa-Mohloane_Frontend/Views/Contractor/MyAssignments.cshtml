@@ -1,0 +1,255 @@
+@model Mesa_Mohloane_Frontend.Dtos.PagedResultDto<Mesa_Mohloane_Frontend.Dtos.AssignmentDto>
+
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "My Assignments";
+    ViewData["ActiveNav"] = "MyAssignments";
+
+    var items = Model?.Items ?? Array.Empty<Mesa_Mohloane_Frontend.Dtos.AssignmentDto>();
+    var currentPage = Model?.Page ?? 1;
+    var totalPages = Model?.TotalPages ?? 1;
+    var totalCount = Model?.TotalCount ?? 0;
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">My Assignments</h1>
+            <div class="page-breadcrumb">
+                <a asp-controller="Contractor" asp-action="Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>My Assignments</span>
+            </div>
+        </div>
+
+        <a asp-controller="Contractor" asp-action="OpenIncidents" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Open Incidents
+        </a>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-check-circle"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    <div class="grid grid-4 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="fa-solid fa-briefcase"></i></div>
+            <div>
+                <div class="stat-value">@totalCount</div>
+                <div class="stat-label">Total Assignments</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon amber"><i class="fa-solid fa-clock"></i></div>
+            <div>
+                <div class="stat-value">@items.Count(x => x.Status == 1)</div>
+                <div class="stat-label">Assigned On Page</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon teal"><i class="fa-solid fa-person-digging"></i></div>
+            <div>
+                <div class="stat-value">@items.Count(x => x.Status == 2)</div>
+                <div class="stat-label">Started On Page</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="fa-solid fa-circle-check"></i></div>
+            <div>
+                <div class="stat-value">@items.Count(x => x.Status >= 3)</div>
+                <div class="stat-label">Completed On Page</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Assignment Register</div>
+                <div class="card-subtitle">Track assigned jobs and update execution status</div>
+            </div>
+
+            <div class="text-sm text-muted">
+                Page @currentPage of @totalPages
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Incident</th>
+                        <th>Tender</th>
+                        <th>Status</th>
+                        <th>Assigned</th>
+                        <th>Started</th>
+                        <th>Completed</th>
+                        <th class="actions">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @if (items.Any())
+                    {
+                        foreach (var assignment in items)
+                        {
+                            <tr>
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @assignment.IncidentId
+                                </td>
+
+                                <td style="font-family:var(--font-mono);font-size:.78rem">
+                                    @assignment.TenderApplicationId
+                                </td>
+
+                                <td>
+                                    @AssignmentStatusBadge(assignment.Status)
+                                </td>
+
+                                <td>@assignment.AssignedAt.ToString("dd MMM yyyy")</td>
+
+                                <td>
+                                    @(assignment.StartedAt?.ToString("dd MMM yyyy") ?? "—")
+                                </td>
+
+                                <td>
+                                    @(assignment.CompletedAt?.ToString("dd MMM yyyy") ?? "—")
+                                </td>
+
+                                <td class="actions">
+                                    <div style="display:flex;gap:.45rem;justify-content:flex-end;flex-wrap:wrap">
+                                        <a asp-controller="Contractor"
+                                           asp-action="AssignmentDetails"
+                                           asp-route-id="@assignment.Id"
+                                           class="btn btn-secondary btn-sm">
+                                            <i class="fa-solid fa-eye"></i>
+                                            View
+                                        </a>
+
+                                        @if (assignment.Status == 1)
+                                        {
+                                            <form asp-controller="Contractor"
+                                                  asp-action="MarkInProgress"
+                                                  method="post"
+                                                  onsubmit="return confirm('Start work on this assignment?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@assignment.Id" />
+
+                                                <button type="submit" class="btn btn-primary btn-sm">
+                                                    <i class="fa-solid fa-play"></i>
+                                                    Start
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (assignment.Status == 2)
+                                        {
+                                            <a asp-controller="Contractor"
+                                               asp-action="AssignmentDetails"
+                                               asp-route-id="@assignment.Id"
+                                               class="btn btn-primary btn-sm">
+                                                <i class="fa-solid fa-flag-checkered"></i>
+                                                Complete
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-briefcase"></i>
+                                    <h4>No assignments found</h4>
+                                    <p>Assigned jobs will appear here after an administrator awards a tender to you.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="pagination">
+                <div class="pagination-info">
+                    Page @currentPage of @totalPages — @totalCount records
+                </div>
+
+                <div class="pagination-nav">
+                    @if (currentPage > 1)
+                    {
+                        <a asp-controller="Contractor"
+                           asp-action="MyAssignments"
+                           asp-route-page="@(currentPage - 1)"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                    }
+
+                    <span class="page-btn active">@currentPage</span>
+
+                    @if (currentPage < totalPages)
+                    {
+                        <a asp-controller="Contractor"
+                           asp-action="MyAssignments"
+                           asp-route-page="@(currentPage + 1)"
+                           class="page-btn">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="page-btn" disabled>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@functions {
+    private static Microsoft.AspNetCore.Html.IHtmlContent AssignmentStatusBadge(int status)
+    {
+        var html = status switch
+        {
+            1 => "<span class=\"badge badge-purple badge-dot\">Assigned</span>",
+            2 => "<span class=\"badge badge-info badge-dot\">Started</span>",
+            3 => "<span class=\"badge badge-success badge-dot\">Completed</span>",
+            4 => "<span class=\"badge badge-warning badge-dot\">Awaiting Approval</span>",
+            5 => "<span class=\"badge badge-primary badge-dot\">Approved</span>",
+            6 => "<span class=\"badge badge-gray badge-dot\">Closed</span>",
+            _ => $"<span class=\"badge badge-gray\">{status}</span>"
+        };
+
+        return new Microsoft.AspNetCore.Html.HtmlString(html);
+    }
+}

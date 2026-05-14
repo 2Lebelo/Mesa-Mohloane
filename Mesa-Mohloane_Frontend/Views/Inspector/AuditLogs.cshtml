@@ -1,0 +1,34 @@
+@model Mesa_Mohloane_Frontend.ViewModels.AuditLogListViewModel
+@{
+    Layout = "~/Views/Shared/_InspectorShell.cshtml";
+    ViewData["Title"] = "Audit Logs";
+    ViewData["ActiveNav"] = "AuditLogs";
+}
+<div class='page-header'><h1 class='page-title'>Audit Logs</h1><div class='page-breadcrumb'><a href='#'>Home</a><span>List</span></div></div>
+<div class='card'>
+    <div class='card-header'><div><div class='card-title'>Audit Logs</div><div class='card-subtitle'>Mesa-Mohloane records</div></div></div>
+    <div class='table-wrap'>
+        <table class='table'>
+            <thead><tr><th>Action</th><th>Entity</th><th>Entity Id</th><th>Actor</th><th>Timestamp</th></tr></thead>
+            <tbody>
+            @if (Model.Logs?.Items?.Any() == true)
+            {
+                foreach (var log in Model.Logs.Items)
+                {
+                    <tr>
+                        <td>@log.ActionType</td>
+                        <td>@log.EntityName</td>
+                        <td>@log.EntityId</td>
+                        <td>@log.ActorUserId</td>
+                        <td>@log.ActionAt.ToString("dd MMM yyyy HH:mm")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan='5'><div class='empty-state'>No logs found</div></td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

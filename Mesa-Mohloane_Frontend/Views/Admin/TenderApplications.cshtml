@@ -1,0 +1,86 @@
+@{
+    Layout = "~/Views/Shared/_AdminShell.cshtml";
+    ViewData["Title"] = "Tender Applications";
+    ViewData["ActiveNav"] = "Tenders";
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Tender Applications</h1>
+            <div class="page-breadcrumb">
+                <a href="/Admin/Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Tender Applications</span>
+            </div>
+        </div>
+
+        <a asp-controller="Admin"
+           asp-action="Incidents"
+           asp-route-status="3"
+           class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Published Incidents
+        </a>
+    </div>
+
+    <div class="grid grid-3 mb-3">
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fa-solid fa-file-contract"></i>
+            </div>
+            <div>
+                <div class="stat-value">Smart</div>
+                <div class="stat-label">Tender Evaluation</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fa-solid fa-ranking-star"></i>
+            </div>
+            <div>
+                <div class="stat-value">Ranked</div>
+                <div class="stat-label">Contractor Selection</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon amber">
+                <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+            <div>
+                <div class="stat-value">Fair</div>
+                <div class="stat-label">Transparent Assignment</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">Tender Review Workflow</div>
+                <div class="card-subtitle">Tender applications are reviewed from each published incident details page</div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="empty-state">
+                <i class="fa-solid fa-file-contract"></i>
+                <h4>Select an incident to review tenders</h4>
+                <p>
+                    Open a published incident, view submitted contractor tenders, run smart evaluation,
+                    compare ranked bids, and assign the best contractor.
+                </p>
+
+                <a asp-controller="Admin"
+                   asp-action="Incidents"
+                   asp-route-status="3"
+                   class="btn btn-primary mt-2">
+                    <i class="fa-solid fa-arrow-right"></i>
+                    Go to Published Incidents
+                </a>
+            </div>
+        </div>
+    </div>
+}

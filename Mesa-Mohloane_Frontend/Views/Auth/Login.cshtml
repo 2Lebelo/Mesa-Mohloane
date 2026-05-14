@@ -1,0 +1,344 @@
+﻿@model Mesa_Mohloane_Frontend.Dtos.LoginRequestDto
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign In — Mesa Mohloane</title>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/app.css" asp-append-version="true" />
+
+    <style>
+        :root {
+            --primary: #1473ff;
+            --primary-dark: #071a4d;
+            --primary-soft: #eaf2ff;
+            --text-dark: #071a4d;
+            --text-muted: #64748b;
+            --border: #e5e7eb;
+            --white: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, Arial, sans-serif;
+            background: #f4f7ff;
+        }
+
+        .auth-page {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 48% 52%;
+            background: var(--white);
+        }
+
+        .auth-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 48px 72px;
+        }
+
+        .auth-brand {
+            position: absolute;
+            top: 36px;
+            left: 72px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--primary-dark);
+            font-weight: 900;
+            font-size: 22px;
+            text-decoration: none;
+        }
+
+            .auth-brand i {
+                color: var(--primary);
+                font-size: 26px;
+            }
+
+        .auth-card {
+            width: 100%;
+            max-width: 460px;
+        }
+
+        .auth-title {
+            color: var(--primary-dark);
+            font-size: 42px;
+            line-height: 1.1;
+            font-weight: 900;
+            letter-spacing: -1.5px;
+            margin-bottom: 12px;
+        }
+
+        .auth-sub {
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            color: var(--primary-dark);
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            min-height: 52px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 0 16px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.2s ease;
+        }
+
+            .form-control:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 4px rgba(20, 115, 255, 0.12);
+            }
+
+        .btn-primary {
+            background: var(--primary);
+            border: none;
+            color: var(--white);
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .btn-lg {
+            height: 54px;
+            border-radius: 12px;
+            font-weight: 900;
+        }
+
+        .btn-primary:hover {
+            background: #005de0;
+        }
+
+        .auth-visual {
+            background: linear-gradient(rgba(7, 26, 77, 0.88), rgba(7, 26, 77, 0.88)), url('/images/Hero_Image.jpg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 72px;
+            color: var(--white);
+        }
+
+        .auth-visual-content {
+            max-width: 520px;
+            text-align: center;
+        }
+
+        .auth-visual-icon {
+            width: 86px;
+            height: 86px;
+            border-radius: 24px;
+            background: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 26px;
+            box-shadow: 0 20px 45px rgba(20, 115, 255, 0.35);
+        }
+
+            .auth-visual-icon i {
+                font-size: 36px;
+            }
+
+        .auth-visual h2 {
+            font-size: 42px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            margin-bottom: 14px;
+        }
+
+        .auth-visual p {
+            color: #cbd5e1;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .alert-danger {
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+            color: #991b1b;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .auth-link {
+            color: var(--primary);
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        @@media (max-width: 992px) {
+            .auth-page {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-visual {
+                display: none;
+            }
+
+            .auth-panel {
+                padding: 120px 28px 48px;
+            }
+
+            .auth-brand {
+                left: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="auth-page">
+        <div class="auth-panel">
+            <a href="/" class="auth-brand">
+                <i class="fa-solid fa-city"></i>
+                Mesa Mohloane
+            </a>
+
+            <div class="auth-card">
+                <h1 class="auth-title">Sign in to your account</h1>
+                <p class="auth-sub">Welcome back — access your smart city infrastructure portal.</p>
+
+                @if (ViewData["Error"] is not null)
+                {
+                    <div id="error-alert" class="alert alert-danger">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="error-msg">@(ViewData["Error"] as string ?? "Invalid credentials.")</span>
+                    </div>
+                }
+
+                <form method="post" action="/Auth/Login" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <input type="hidden" name="returnUrl" value="@(ViewData["ReturnUrl"] as string ?? "")" />
+
+                    <div class="form-group">
+                        <label class="form-label">Email address</label>
+                        <input type="email"
+                               id="email"
+                               name="Email"
+                               value="@Model.Email"
+                               class="form-control"
+                               placeholder="you@example.com"
+                               required
+                               autocomplete="email" />
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" style="display:flex;justify-content:space-between">
+                            Password
+                            <a href="/Auth/ForgotPassword" class="auth-link" style="font-size:.8rem">Forgot password?</a>
+                        </label>
+
+                        <div style="position:relative">
+                            <input type="password"
+                                   id="password"
+                                   name="Password"
+                                   class="form-control"
+                                   placeholder="••••••••"
+                                   required
+                                   autocomplete="current-password"
+                                   style="padding-right:2.75rem" />
+
+                            <button type="button"
+                                    id="toggle-pw"
+                                    aria-label="Toggle password visibility"
+                                    style="position:absolute;right:.85rem;top:50%;transform:translateY(-50%);background:none;border:none;color:#64748b;cursor:pointer">
+                                <i class="fa-solid fa-eye" id="pw-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1.5rem">
+                        <input type="checkbox" id="remember" style="accent-color:var(--primary);width:15px;height:15px" />
+                        <label for="remember" style="color:#64748b;font-size:.9rem;cursor:pointer">Remember me</label>
+                    </div>
+
+                    <button type="submit" class="btn-primary btn-full btn-lg">
+                        Login
+                    </button>
+                </form>
+
+                <p style="text-align:center;margin-top:1.5rem;font-size:.9rem;color:#64748b">
+                    Don't have an account?
+                    <a href="/Auth/Register" class="auth-link">Sign up</a>
+                </p>
+            </div>
+        </div>
+
+        <div class="auth-visual">
+            <div class="auth-visual-content">
+                <div class="auth-visual-icon">
+                    <i class="fa-solid fa-building-shield"></i>
+                </div>
+
+                <h2>Mesa Mohloane Smart City</h2>
+                <p>
+                    Manage connected infrastructure, community services, and smart city operations
+                    through one secure digital platform.
+                </p>
+
+                <div style="display:flex;gap:1rem;margin-top:2.5rem;justify-content:center">
+                    <div style="text-align:center">
+                        <div style="font-size:1.5rem;font-weight:900;color:#ffffff">Secure</div>
+                        <div style="font-size:.75rem;color:#cbd5e1">Access</div>
+                    </div>
+
+                    <div style="width:1px;background:rgba(255,255,255,.18)"></div>
+
+                    <div style="text-align:center">
+                        <div style="font-size:1.5rem;font-weight:900;color:#ffffff">Smart</div>
+                        <div style="font-size:.75rem;color:#cbd5e1">Services</div>
+                    </div>
+
+                    <div style="width:1px;background:rgba(255,255,255,.18)"></div>
+
+                    <div style="text-align:center">
+                        <div style="font-size:1.5rem;font-weight:900;color:#ffffff">24/7</div>
+                        <div style="font-size:.75rem;color:#cbd5e1">Portal</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        document.getElementById('toggle-pw')?.addEventListener('click', () => {
+            const password = document.getElementById('password');
+            const icon = document.getElementById('pw-icon');
+
+            const isText = password.type === 'text';
+            password.type = isText ? 'password' : 'text';
+            icon.className = isText ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,328 @@
+@model Mesa_Mohloane_Frontend.ViewModels.SubmitInvoiceViewModel
+
+@{
+    Layout = "~/Views/Shared/_ContractorShell.cshtml";
+    ViewData["Title"] = "Submit Invoice";
+    ViewData["ActiveNav"] = "Invoices";
+
+    var hasExistingInvoice = Model.ExistingInvoice is not null;
+}
+
+@section Content {
+    <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <div>
+            <h1 class="page-title">Submit Invoice</h1>
+            <div class="page-breadcrumb">
+                <a asp-controller="Contractor" asp-action="Dashboard">Home</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <a asp-controller="Contractor" asp-action="MyAssignments">Assignments</a>
+                <i class="fa-solid fa-chevron-right" style="font-size:.55rem"></i>
+                <span>Submit Invoice</span>
+            </div>
+        </div>
+
+        <a asp-controller="Contractor"
+           asp-action="AssignmentDetails"
+           asp-route-id="@Model.AssignmentId"
+           class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back to Assignment
+        </a>
+    </div>
+
+    @if (TempData["Success"] is not null)
+    {
+        <div class="alert alert-success">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] is not null)
+    {
+        <div class="alert alert-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>@TempData["Error"]</span>
+        </div>
+    }
+
+    @if (hasExistingInvoice)
+    {
+        <div class="alert alert-warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>
+                An invoice has already been submitted for this assignment:
+                <strong>@Model.ExistingInvoice!.InvoiceNumber</strong>.
+            </span>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <a asp-controller="Contractor"
+                   asp-action="MyInvoices"
+                   class="btn btn-primary">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    View My Invoices
+                </a>
+            </div>
+        </div>
+    }
+    else if (Model.Assignment.Status != 5)
+    {
+        <div class="alert alert-warning">
+            <i class="fa-solid fa-lock"></i>
+            <span>
+                You can submit an invoice only after the administrator approves the completed assignment.
+            </span>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fa-solid fa-briefcase"></i></div>
+                <div>
+                    <div class="stat-value">Approved</div>
+                    <div class="stat-label">Assignment Status</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fa-solid fa-file-contract"></i></div>
+                <div>
+                    <div class="stat-value">M@Model.OriginalQuotedAmount.ToString("N0")</div>
+                    <div class="stat-label">Original Quote</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon amber"><i class="fa-solid fa-percent"></i></div>
+                <div>
+                    <div class="stat-value">10%</div>
+                    <div class="stat-label">Variance Flag Threshold</div>
+                </div>
+            </div>
+        </div>
+
+        <form asp-controller="Contractor"
+              asp-action="SubmitInvoice"
+              method="post"
+              id="invoice-form">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" name="AssignmentId" value="@Model.Assignment.Id" />
+            <input type="hidden" name="TenderApplicationId" value="@Model.Assignment.TenderApplicationId" />
+            <input type="hidden" name="OriginalQuotedAmount" value="@Model.OriginalQuotedAmount" />
+            <input type="hidden" name="FinalInvoiceAmount" id="FinalInvoiceAmount" value="0" />
+
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Invoice Line Items</div>
+                        <div class="card-subtitle">
+                            Add materials, labour, equipment, transport, and other costs. Line items must sum to final invoice amount.
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="addLineItem()">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Line
+                    </button>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="table" id="line-items-table">
+                        <thead>
+                            <tr>
+                                <th style="min-width:150px">Category</th>
+                                <th style="min-width:220px">Description</th>
+                                <th style="min-width:100px">Qty</th>
+                                <th style="min-width:120px">Unit</th>
+                                <th style="min-width:130px">Unit Price</th>
+                                <th style="min-width:130px">Line Total</th>
+                                <th class="actions">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="line-items-body"></tbody>
+
+                        <tfoot>
+                            <tr>
+                                <th colspan="5" class="text-right">Final Invoice Amount</th>
+                                <th id="display-total">M0.00</th>
+                                <th></th>
+                            </tr>
+
+                            <tr>
+                                <th colspan="5" class="text-right">Variance from Quote</th>
+                                <th id="display-variance">0.0%</th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="card-footer" style="display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+                    <div class="text-sm text-muted">
+                        Original approved tender quote:
+                        <strong>M@Model.OriginalQuotedAmount.ToString("N2")</strong>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                        Submit Invoice
+                    </button>
+                </div>
+            </div>
+        </form>
+    }
+}
+
+@section Scripts {
+    <script>
+        let lineIndex = 0;
+        const originalQuote = Number('@Model.OriginalQuotedAmount'.replace(',', '.')) || 0;
+
+        function addLineItem() {
+            const tbody = document.getElementById('line-items-body');
+
+            const row = document.createElement('tr');
+            row.dataset.index = lineIndex;
+
+            row.innerHTML = `
+                <td>
+                    <select name="LineItems[${lineIndex}].Category" class="form-select-light" required>
+                        <option value="1">Labor</option>
+                        <option value="2">Materials</option>
+                        <option value="3">Equipment</option>
+                        <option value="4">Transport</option>
+                        <option value="5">Other</option>
+                    </select>
+                </td>
+
+                <td>
+                    <input name="LineItems[${lineIndex}].Description"
+                           class="form-control-light"
+                           required
+                           placeholder="Description" />
+                </td>
+
+                <td>
+                    <input name="LineItems[${lineIndex}].Quantity"
+                           class="form-control-light quantity"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           value="1"
+                           required />
+                </td>
+
+                <td>
+                    <input name="LineItems[${lineIndex}].UnitOfMeasure"
+                           class="form-control-light"
+                           required
+                           placeholder="unit/day/trip" />
+                </td>
+
+                <td>
+                    <input name="LineItems[${lineIndex}].UnitPrice"
+                           class="form-control-light unit-price"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           value="0"
+                           required />
+                </td>
+
+                <td>
+                    <input name="LineItems[${lineIndex}].LineTotal"
+                           class="form-control-light line-total"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           value="0"
+                           readonly />
+                </td>
+
+                <td class="actions">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeLineItem(this)">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(row);
+
+            row.querySelectorAll('.quantity, .unit-price').forEach(input => {
+                input.addEventListener('input', recalculate);
+            });
+
+            lineIndex++;
+            recalculate();
+        }
+
+        function removeLineItem(button) {
+            button.closest('tr')?.remove();
+            recalculate();
+        }
+
+        function recalculate() {
+            let total = 0;
+
+            document.querySelectorAll('#line-items-body tr').forEach(row => {
+                const qty = Number(row.querySelector('.quantity')?.value || 0);
+                const unitPrice = Number(row.querySelector('.unit-price')?.value || 0);
+                const lineTotal = qty * unitPrice;
+
+                const lineTotalInput = row.querySelector('.line-total');
+                if (lineTotalInput) {
+                    lineTotalInput.value = lineTotal.toFixed(2);
+                }
+
+                total += lineTotal;
+            });
+
+            document.getElementById('FinalInvoiceAmount').value = total.toFixed(2);
+            document.getElementById('display-total').textContent = `M${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+            const variance = originalQuote > 0 ? Math.abs(total - originalQuote) / originalQuote * 100 : 0;
+            const varianceEl = document.getElementById('display-variance');
+
+            varianceEl.textContent = `${variance.toFixed(1)}%`;
+
+            if (variance > 10) {
+                varianceEl.style.color = 'var(--danger)';
+                varianceEl.style.fontWeight = '700';
+            } else {
+                varianceEl.style.color = 'var(--success)';
+                varianceEl.style.fontWeight = '700';
+            }
+        }
+
+        document.getElementById('invoice-form')?.addEventListener('submit', function (e) {
+            const rows = document.querySelectorAll('#line-items-body tr');
+
+            if (rows.length === 0) {
+                e.preventDefault();
+                showToast?.('Add at least one invoice line item.', 'error');
+                return;
+            }
+
+            recalculate();
+
+            const total = Number(document.getElementById('FinalInvoiceAmount').value || 0);
+
+            if (total <= 0) {
+                e.preventDefault();
+                showToast?.('Invoice total must be greater than zero.', 'error');
+                return;
+            }
+
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').innerHTML =
+                '<i class="fa-solid fa-spinner fa-spin"></i> Submitting...';
+        });
+
+        addLineItem();
+    </script>
+}
